@@ -1,0 +1,54 @@
+[gd_resource type="SpatialMaterial" load_steps=8 format=2]
+
+[sub_resource type="OpenSimplexNoise" id=1]
+
+[sub_resource type="NoiseTexture" id=2]
+width = 1024
+height = 1024
+seamless = true
+noise = SubResource( 1 )
+
+[sub_resource type="OpenSimplexNoise" id=3]
+
+[sub_resource type="NoiseTexture" id=4]
+width = 1024
+height = 1024
+seamless = true
+noise = SubResource( 3 )
+
+[sub_resource type="OpenSimplexNoise" id=5]
+
+[sub_resource type="NoiseTexture" id=6]
+width = 1024
+height = 1024
+seamless = true
+as_normalmap = true
+noise = SubResource( 5 )
+
+[sub_resource type="NoiseTexture" id=7]
+width = 1024
+height = 1024
+seamless = true
+
+[resource]
+albedo_color = Color( 0.662745, 0.662745, 0.662745, 1 )
+albedo_texture = SubResource( 2 )
+metallic = 0.3
+metallic_specular = 0.6
+metallic_texture = SubResource( 4 )
+metallic_texture_channel = 4
+roughness = 0.4
+roughness_texture = SubResource( 7 )
+emission_enabled = true
+emission = Color( 0.627451, 0, 0.219608, 1 )
+emission_energy = 1.0
+emission_operator = 0
+emission_on_uv2 = false
+normal_enabled = true
+normal_scale = 8.0
+normal_texture = SubResource( 6 )
+rim_enabled = true
+rim = 1.0
+rim_tint = 0.5
+anisotropy_enabled = true
+anisotropy = 0.0
