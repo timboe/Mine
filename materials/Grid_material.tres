@@ -9,7 +9,6 @@ uniform float STEP_SIZE = 10.0;
 uniform float SHAPE_LENGTH = 100.0;
 uniform float MOUNTAIN_MAX_HEIGHT = 100.0;
 uniform float MOUNTAIN_MAX_COLOUR = 0.5;
-uniform float MOUNTAIN_Y_FLOOR = -1.0;
 uniform vec4 TOP_COLOUR = vec4(1.0, 0.0, 1.0, 1.0);
 uniform bool SCROLL = false;
 
@@ -39,7 +38,7 @@ void DO_MOUNTAIN(inout vec3 MVERTEX, inout vec4 MCOLOR, inout vec4 MINSTANCE_CUS
 		height *= 1.0 - (x * 2.0);
 	}
 	MVERTEX.y += MOUNTAIN_MAX_HEIGHT * height;
-	MVERTEX.y = max(MOUNTAIN_Y_FLOOR, MVERTEX.y);
+	MVERTEX.y = max(0, MVERTEX.y);
 	MCOLOR = mix(MCOLOR, TOP_COLOUR, (MVERTEX.y / MOUNTAIN_MAX_COLOUR) / MOUNTAIN_MAX_HEIGHT);
 }
 
@@ -66,6 +65,5 @@ shader_param/STEP_SIZE = 10.0
 shader_param/SHAPE_LENGTH = 100.0
 shader_param/MOUNTAIN_MAX_HEIGHT = 100.0
 shader_param/MOUNTAIN_MAX_COLOUR = 0.5
-shader_param/MOUNTAIN_Y_FLOOR = -1.0
 shader_param/TOP_COLOUR = Plane( 1, 0, 1, 1 )
 shader_param/SCROLL = false

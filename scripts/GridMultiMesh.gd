@@ -50,7 +50,7 @@ func _ready():
 	material.set_shader_param("MOUNTAIN_MAX_HEIGHT", 200.0)
 	material.set_shader_param("MOUNTAIN_MAX_COLOUR", 0.25) # Fraction of height
 	material.set_shader_param("MOUNTAIN_TOP_COLOUR", Color.magenta)
-	material.set_shader_param("MOUNTAIN_Y_FLOOR", translation.y)
+
 	material.set_shader_param("SCROLL", true)
 	grid_mesh.surface_set_material(0, material)
 	multimesh.mesh = grid_mesh
