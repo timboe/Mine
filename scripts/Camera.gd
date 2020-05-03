@@ -48,6 +48,7 @@ export var up_action = "ui_zoom_in"
 export var down_action = "ui_zoom_out"
 export var trigger_action = ""
 
+
 # Gui settings
 export var use_gui = true
 export var gui_action = "ui_cancel"
@@ -80,7 +81,7 @@ func _ready():
 		rotate_left_action,
 		rotate_right_action,
 		rotate_up_action,
-		rotate_down_action
+		rotate_down_action,
 	])
 
 	if privot:
@@ -104,7 +105,7 @@ func _input(event):
 		else:
 			_triggered=true
 		if freelook and _triggered:
-			if event is InputEventMouseMotion:
+			if event is InputEventMouseMotion and Input.is_mouse_button_pressed(2):
 				_mouse_offset = event.relative
 				
 			_rotation_offset.x = Input.get_action_strength(rotate_right_action) - Input.get_action_strength(rotate_left_action)
@@ -112,8 +113,14 @@ func _input(event):
 	
 		if movement and _triggered:
 			_direction.x = Input.get_action_strength(right_action) - Input.get_action_strength(left_action)
-			_direction.y = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
 			_direction.z = Input.get_action_strength(backward_action) - Input.get_action_strength(forward_action)
+			
+			var zoom : int = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
+			if zoom:
+				_direction.y = zoom
+				
+			#print(_total_pitch)
+			#print("UAS " , Input.get_action_strength(up_action) , " DAS " , Input.get_action_strength(down_action), " Y " , _direction.y)
 			
 			var q := Quat(Vector3(0.0, deg2rad(rotation_degrees.y), 0.0))
 			_direction = q.xform(_direction)
@@ -153,6 +160,8 @@ func _update_movement(delta):
 	_speed.x = clamp(_speed.x + offset.x, -max_speed.x, max_speed.x)
 	_speed.y = clamp(_speed.y + offset.y, -max_speed.y, max_speed.y)
 	_speed.z = clamp(_speed.z + offset.z, -max_speed.z, max_speed.z)
+	
+	#print("SY " , _speed.y ," DY ", _direction.y)
 
 	# Apply deceleration if no input
 	if _direction.x == 0:
@@ -167,6 +176,8 @@ func _update_movement(delta):
 	else:
 		global_translate(_speed * delta)
 	translation.y = clamp(translation.y, y_min, y_max)
+	
+	_direction.y = 0
 
 func _update_rotation(delta):
 	var offset = Vector2();

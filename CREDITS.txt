@@ -1,0 +1,5 @@
+Aluminium material: Godot Material demo (MIT). https://godotengine.org/asset-library/asset/123
+
+Camera script: Copyright 2018-2020 Jaccomo Lorenz (MIT). https://github.com/Maujoe/godot-camera-control
+
+smoke_06: Kenny Particle Pack (CC0). https://www.kenney.nl/assets/particle-pack
