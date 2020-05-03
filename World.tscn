@@ -1,21 +1,69 @@
-[gd_scene load_steps=4 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://scenes/CairoTilesetGen.tscn" type="PackedScene" id=1]
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=2]
-[ext_resource path="res://sky/WorldEnvironment_OvercastLow.tscn" type="PackedScene" id=3]
+[ext_resource path="res://scripts/OmniLight.gd" type="Script" id=4]
+
+[sub_resource type="GIProbeData" id=4]
+bounds = AABB( -239.338, -50.454, -320.619, 478.677, 100.908, 641.239 )
+cell_size = 1.25242
+to_cell_xform = Transform( 0.798454, 0, 0, 0, 0.798454, 0, 0, 0, 0.798454, 191.101, 40.2852, 256 )
+dynamic_data = PoolIntArray( 0, 10, 512, 128, 512, 1, 0, 0, 0, 0, 0, 0, 7, 0, 9, 3787, -1, -1, -1, -1, -1, -1, -1, -1, 0, 0, 8355711, 0 )
+dynamic_range = 4
+bias = 1.5
+normal_bias = 0.0
+propagation = 0.7
+interior = true
+
+[sub_resource type="ProceduralSky" id=3]
+sky_top_color = Color( 0.87451, 0.0627451, 0.945098, 1 )
+sky_horizon_color = Color( 0.0705882, 0.862745, 0.882353, 1 )
+sky_curve = 0.458842
+sky_energy = 0.5
+ground_bottom_color = Color( 0, 0.976471, 1, 1 )
+ground_horizon_color = Color( 0.921569, 1, 0, 1 )
+ground_curve = 0.0527804
+ground_energy = 0.5
+sun_color = Color( 0.956863, 0.74902, 0.0392157, 1 )
+sun_latitude = 3.0
+sun_longitude = 90.0
+sun_angle_min = 15.0
+
+[sub_resource type="Environment" id=2]
+background_mode = 2
+background_sky = SubResource( 3 )
+fog_color = Color( 0.0941176, 0.921569, 0.905882, 1 )
+fog_sun_color = Color( 0, 0.952941, 1, 1 )
+adjustment_enabled = true
+adjustment_saturation = 2.0
 
 [node name="World" type="Spatial"]
 
-[node name="WorldEnvironment_OvercastLow" parent="." instance=ExtResource( 3 )]
+[node name="GIProbe" type="GIProbe" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 202.424, 30, 104.947 )
+visible = false
+subdiv = 3
+extents = Vector3( 239.338, 50.454, 320.619 )
+interior = true
+data = SubResource( 4 )
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource( 2 )
 
 [node name="Camera" type="Camera" parent="."]
-transform = Transform( -0.5, 0.612372, -0.612373, 0, 0.707107, 0.707106, 0.866025, 0.353553, -0.353554, 0, 70, 0 )
+transform = Transform( -0.707107, 0.612372, -0.353553, 0, 0.5, 0.866025, 0.707107, 0.612372, -0.353553, 0, 70, 0 )
 far = 8192.0
 script = ExtResource( 2 )
-mouse_mode = 0
-freelook_mode = 0
 pitch_limit = 30
 max_speed = Vector3( 100, 100, 100 )
-use_gui = false
+
+[node name="OmniLight" type="OmniLight" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 30, 0 )
+light_energy = 0.5
+light_specular = 0.4
+omni_range = 50.0
+omni_attenuation = 0.196146
+omni_shadow_mode = 0
+script = ExtResource( 4 )
 
 [node name="CairoTilesetGen" parent="." instance=ExtResource( 1 )]

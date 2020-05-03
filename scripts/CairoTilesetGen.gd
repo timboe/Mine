@@ -2,7 +2,7 @@ tool
 extends Spatial
 class_name CairoTilesetGen
 
-onready var base_material = preload("res://test_materials/stone.tres")
+onready var base_material = preload("res://test_materials/aluminium.tres")
 var mat_a : Material = null
 var mat_b : Material = null
 var mat_c : Material = null
@@ -44,7 +44,7 @@ const RIGHT_POINT_Y : float = UNIT * ( SMALL_HYPOT * cos(deg2rad(30)) )
 const UV_SCALE : float = 0.5
 const UV_MAX_HEIGHT = (HEIGHT/UNIT)*UV_SCALE
 
-func add_face(var surface_tool, var start):
+func add_face(var surface_tool : SurfaceTool, var start : int):
 	surface_tool.add_index(start + 0)
 	surface_tool.add_index(start + 1)
 	surface_tool.add_index(start + 2)
@@ -52,6 +52,20 @@ func add_face(var surface_tool, var start):
 	surface_tool.add_index(start + 1)
 	surface_tool.add_index(start + 3)
 	surface_tool.add_index(start + 2)
+	
+func add_face_vertex(var surface_tool : SurfaceTool, var from : Vector3, var to : Vector3):
+	surface_tool.add_uv(Vector2(0.0, 0.0));
+	surface_tool.add_vertex(from)
+	# 6
+	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
+	surface_tool.add_vertex(Vector3(from.x, HEIGHT, from.z))
+	# 7
+	surface_tool.add_uv(Vector2(UV_SCALE, 0.0));
+	surface_tool.add_vertex(Vector3(to))
+	# 8
+	surface_tool.add_uv(Vector2(UV_SCALE, UV_MAX_HEIGHT));
+	surface_tool.add_vertex(Vector3(to.x, HEIGHT, to.z))
+	
 	
 func generate_cairo_pentagon() -> ArrayMesh:
 	var surface_tool = SurfaceTool.new()
@@ -74,75 +88,16 @@ func generate_cairo_pentagon() -> ArrayMesh:
 	surface_tool.add_uv(Vector2((RIGHT_POINT_Y/UNIT)*UV_SCALE, (RIGHT_POINT_X/UNIT)*UV_SCALE));
 	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, HEIGHT, RIGHT_POINT_X))
 	###################################
-	# First side (rect 1x2)
-	# 5
-	surface_tool.add_uv(Vector2(0.0, 0.0));
-	surface_tool.add_vertex(Vector3(0.0, 0.0, 0.0))
-	# 6
-	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(0.0, HEIGHT, 0.0))
-	# 7
-	surface_tool.add_uv(Vector2(UV_SCALE, 0.0));
-	surface_tool.add_vertex(Vector3(0.0, 0.0, UNIT))
-	# 8
-	surface_tool.add_uv(Vector2(UV_SCALE, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(0.0, HEIGHT, UNIT))
-	###################################
-	# Second side (rect sqrt(3)-1x2)
-	#9
-	surface_tool.add_uv(Vector2(0.0, 0.0));
-	surface_tool.add_vertex(Vector3(0.0, 0.0, UNIT))
-	# 10
-	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(0.0, HEIGHT, UNIT))
-	# 11
-	surface_tool.add_uv(Vector2(UV_SCALE, 0.0));  # Note - squashing the texture a bit by going to 1.0, not to 0.732
-	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X))
-	# 12
-	surface_tool.add_uv(Vector2(UV_SCALE, UV_MAX_HEIGHT)); # Note - squashing the texture a bit by going to 1.0, not to 0.732
-	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, HEIGHT, RIGHT_POINT_X))
-	###################################
-	# Third side (rect 1x2)
-	# 13
-	surface_tool.add_uv(Vector2(0, 0));
-	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X))
-	# 14
-	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, HEIGHT, RIGHT_POINT_X))
-	# 15
-	surface_tool.add_uv(Vector2(UV_SCALE, 0.0));
-	surface_tool.add_vertex(Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X))
-	# 16
-	surface_tool.add_uv(Vector2(UV_SCALE, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(TOP_POINT_Y, HEIGHT, TOP_POINT_X))
-	###################################
-	# Fourth side (rect 1x2)
-	# 17
-	surface_tool.add_uv(Vector2(0.0, 0.0));
-	surface_tool.add_vertex(Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X))
-	# 18
-	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(TOP_POINT_Y, HEIGHT, TOP_POINT_X))
-	# 19
-	surface_tool.add_uv(Vector2(UV_SCALE, 0.0));
-	surface_tool.add_vertex(Vector3(UNIT, 0.0, 0.0))
-	# 20
-	surface_tool.add_uv(Vector2(UV_SCALE, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(UNIT, HEIGHT, 0.0))
-	###################################
-	# Fifth side (rect 1x2)
-	# 21
-	surface_tool.add_uv(Vector2(0.0, 0.0));
-	surface_tool.add_vertex(Vector3(UNIT, 0.0, 0.0))
-	# 22
-	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(UNIT, HEIGHT, 0.0))
-	# 23
-	surface_tool.add_uv(Vector2(1.0, 0.0));
-	surface_tool.add_vertex(Vector3(0.0, 0.0, 0.0))
-	# 24
-	surface_tool.add_uv(Vector2(1.0*UV_SCALE, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(0.0, HEIGHT, 0.0))
+	# First side (rect 1x2), 5-8
+	add_face_vertex(surface_tool, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, UNIT))
+	# Second side (rect sqrt(3)-1x2), 9-12
+	add_face_vertex(surface_tool, Vector3(0.0, 0.0, UNIT), Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X))
+	# Third side (rect 1x2), 13-16
+	add_face_vertex(surface_tool, Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X), Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X))
+	# Fourth side (rect 1x2), 17-20
+	add_face_vertex(surface_tool, Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X), Vector3(UNIT, 0.0, 0))
+	# Fifth side (rect 1x2), 21-24
+	add_face_vertex(surface_tool, Vector3(UNIT, 0.0, 0), Vector3(0.0, 0.0, 0))
 	#####################################################
 	# Top face, three triangles
 	surface_tool.add_index(0)
@@ -174,10 +129,12 @@ func generate_cairo_pentagon() -> ArrayMesh:
 func new_physics_body(var mat : Material) -> StaticBody:
 	var physics_body_instance = StaticBody.new()
 	var mesh_instance = MeshInstance.new()
+	mesh_instance.use_in_baked_light = true
 	mesh_instance.set_script(tile_script)
 	mesh_instance.set_mesh(cairo_mesh)
 	mesh_instance.set_surface_material(0, mat.duplicate())
-	mesh_instance.setID(tileID)
+	if not Engine.editor_hint:
+		mesh_instance.setID(tileID)
 	tileID += 1
 	physics_body_instance.add_child(mesh_instance)
 	var cs = CollisionShape.new()
@@ -225,10 +182,10 @@ func _ready():
 	#mat_c.albedo_color = Color(240/255.0, 28/255.0, 93/255.0)
 	#mat_d.albedo_color = Color(30/255.0, 204/255.0, 204/255.0) # R was 136
 	# Wood
-	mat_a.albedo_color = Color(60/255.0, 61/255.0, 52/255.0)
-	mat_b.albedo_color = Color(94/255.0, 30/255.0, 18/255.0)
-	mat_c.albedo_color = Color(74/255.0, 43/255.0, 15/255.0)
-	mat_d.albedo_color = Color(181/255.0, 121/255.0, 25/255.0)
+	#mat_a.albedo_color = Color(60/255.0, 61/255.0, 52/255.0)
+	#mat_b.albedo_color = Color(94/255.0, 30/255.0, 18/255.0)
+	#mat_c.albedo_color = Color(74/255.0, 43/255.0, 15/255.0)
+	#mat_d.albedo_color = Color(181/255.0, 121/255.0, 25/255.0)
 	var triplets: int = 5
 	var floor_v : Vector2 = Vector2()
 	for x in range(0, triplets*6):

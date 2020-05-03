@@ -8,17 +8,19 @@ extends Spatial
 export var enabled = true setget set_enabled
 
 # See https://docs.godotengine.org/en/latest/classes/class_input.html?highlight=Input#enumerations
-export(int, "Visible", "Hidden", "Captured, Confined") var mouse_mode = Input.MOUSE_MODE_CAPTURED
+export(int, "Visible", "Hidden", "Captured, Confined") var mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 enum Freelook_Modes {MOUSE, INPUT_ACTION, MOUSE_AND_INPUT_ACTION}
 
 # Freelook settings
 export var freelook = true
-export (Freelook_Modes) var freelook_mode = 2
+export (Freelook_Modes) var freelook_mode = 1
 export (float, 0.0, 1.0) var sensitivity = 0.5
 export (float, 0.0, 0.999, 0.001) var smoothness = 0.5 setget set_smoothness
 export (int, 0, 360) var yaw_limit = 360
 export (int, 0, 360) var pitch_limit = 360
+export (int, -100, 100) var y_min = 30
+export (int, -100, 100) var y_max = 60
 
 # Pivot Settings
 export(NodePath) var privot setget set_privot
@@ -31,19 +33,19 @@ export var movement = true
 export (float, 0.0, 1.0) var acceleration = 1.0
 export (float, 0.0, 0.0, 1.0) var deceleration = 0.1
 export var max_speed = Vector3(1.0, 1.0, 1.0)
-export var local = true
+export var local = false
 
 # Input Actions
-export var rotate_left_action = ""
-export var rotate_right_action = ""
-export var rotate_up_action = ""
-export var rotate_down_action = ""
+export var rotate_left_action = "ui_rotate_left"
+export var rotate_right_action = "ui_rotate_right"
+export var rotate_up_action = "ui_pitch_up"
+export var rotate_down_action = "ui_pitch_down"
 export var forward_action = "ui_up"
 export var backward_action = "ui_down"
 export var left_action = "ui_left"
 export var right_action = "ui_right"
-export var up_action = "ui_page_up"
-export var down_action = "ui_page_down"
+export var up_action = "ui_zoom_in"
+export var down_action = "ui_zoom_out"
 export var trigger_action = ""
 
 # Gui settings
@@ -89,10 +91,9 @@ func _ready():
 	set_enabled(enabled)
 
 	if use_gui:
-		pass
-		#_gui = preload("camera_control_gui.gd")
-		#_gui = _gui.new(self, gui_action)
-		#add_child(_gui)
+		_gui = preload("camera_control_gui.gd")
+		_gui = _gui.new(self, gui_action)
+		add_child(_gui)
 
 func _input(event):
 		if len(trigger_action)!=0:
@@ -113,6 +114,11 @@ func _input(event):
 			_direction.x = Input.get_action_strength(right_action) - Input.get_action_strength(left_action)
 			_direction.y = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
 			_direction.z = Input.get_action_strength(backward_action) - Input.get_action_strength(forward_action)
+			
+			var q := Quat(Vector3(0.0, deg2rad(rotation_degrees.y), 0.0))
+			_direction = q.xform(_direction)
+			#print("heading ", rotation_degrees.y, " direction ", _direction)
+			
 
 func _process(delta):
 	if _triggered:
@@ -160,6 +166,7 @@ func _update_movement(delta):
 		translate(_speed * delta)
 	else:
 		global_translate(_speed * delta)
+	translation.y = clamp(translation.y, y_min, y_max)
 
 func _update_rotation(delta):
 	var offset = Vector2();
