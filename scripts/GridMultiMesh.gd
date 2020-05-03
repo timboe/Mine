@@ -48,7 +48,7 @@ func _ready():
 	material.set_shader_param("SHAPE_SIZE", grid_mesh_instance.STEP_SIZE)
 	material.set_shader_param("SHAPE_LENGTH", grid_mesh_instance.LENGTH)
 	material.set_shader_param("MOUNTAIN_MAX_HEIGHT", 200.0)
-	material.set_shader_param("MOUNTAIN_MAX_COLOUR", 0.5) # Fraction of height
+	material.set_shader_param("MOUNTAIN_MAX_COLOUR", 0.25) # Fraction of height
 	material.set_shader_param("MOUNTAIN_TOP_COLOUR", Color.magenta)
 	material.set_shader_param("MOUNTAIN_Y_FLOOR", translation.y)
 	material.set_shader_param("SCROLL", true)

@@ -5,6 +5,9 @@ onready var camera : Camera = $"../Camera"
 onready var desired_height : float = translation.y
 
 func _physics_process(var _delta : float):
+	visible = camera.current
+	if !visible:
+		return
 	var mouse_pos = get_viewport().get_mouse_position()
 	var from = camera.project_ray_origin(mouse_pos)
 	var to = from + camera.project_ray_normal(mouse_pos) * 500

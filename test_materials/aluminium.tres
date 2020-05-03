@@ -12,5 +12,5 @@ normal_enabled = true
 normal_scale = 0.21
 normal_texture = ExtResource( 1 )
 anisotropy_enabled = true
-anisotropy = -1.0
+anisotropy = 0.2
 anisotropy_flowmap = ExtResource( 3 )

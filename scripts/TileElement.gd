@@ -98,7 +98,7 @@ func _on_StaticBody_mouse_entered():
 
 func _on_StaticBody_mouse_exited():
 	update_HOVER_color(false)
-	
+
 func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, _shape_idx):
 	if event is InputEventMouseButton:
 		if event.is_pressed() and event.button_index == BUTTON_LEFT:

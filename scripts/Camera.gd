@@ -1,7 +1,7 @@
 # Licensed under the MIT License.
 # Copyright (c) 2018-2020 Jaccomo Lorenz (Maujoe)
 
-extends Spatial
+extends Camera
 
 # User settings:
 # General settings
@@ -50,8 +50,8 @@ export var trigger_action = ""
 
 
 # Gui settings
-export var use_gui = true
-export var gui_action = "ui_cancel"
+#export var use_gui = true
+#export var gui_action = "ui_cancel"
 
 # Intern variables.
 var _mouse_offset = Vector2()
@@ -63,7 +63,7 @@ var _total_pitch = 0.0
 
 var _direction = Vector3(0.0, 0.0, 0.0)
 var _speed = Vector3(0.0, 0.0, 0.0)
-var _gui
+#var _gui
 
 var _triggered=false
 
@@ -75,7 +75,7 @@ func _ready():
 		backward_action,
 		left_action,
 		right_action,
-		gui_action,
+		#gui_action,
 		up_action,
 		down_action,
 		rotate_left_action,
@@ -91,47 +91,56 @@ func _ready():
 
 	set_enabled(enabled)
 
-	if use_gui:
-		_gui = preload("camera_control_gui.gd")
-		_gui = _gui.new(self, gui_action)
-		add_child(_gui)
+	#if use_gui:
+	#	_gui = preload("camera_control_gui.gd")
+	#	_gui = _gui.new(self, gui_action)
+	#	add_child(_gui)
 
 func _input(event):
-		if len(trigger_action)!=0:
-			if event.is_action_pressed(trigger_action):
-				_triggered=true
-			elif event.is_action_released(trigger_action):
-				_triggered=false
-		else:
-			_triggered=true
-		if freelook and _triggered:
-			if event is InputEventMouseMotion and Input.is_mouse_button_pressed(2):
-				_mouse_offset = event.relative
-				
-			_rotation_offset.x = Input.get_action_strength(rotate_right_action) - Input.get_action_strength(rotate_left_action)
-			_rotation_offset.y = Input.get_action_strength(rotate_down_action) - Input.get_action_strength(rotate_up_action)
+	if event.is_action_pressed("toggle_fullscreen"):
+		OS.window_fullscreen = !OS.window_fullscreen
 	
-		if movement and _triggered:
-			_direction.x = Input.get_action_strength(right_action) - Input.get_action_strength(left_action)
-			_direction.z = Input.get_action_strength(backward_action) - Input.get_action_strength(forward_action)
+	if len(trigger_action)!=0:
+		if event.is_action_pressed(trigger_action):
+			_triggered=true
+		elif event.is_action_released(trigger_action):
+			_triggered=false
+	else:
+		_triggered=true
+	if freelook and _triggered:
+		if event is InputEventMouseMotion and Input.is_mouse_button_pressed(2):
+			_mouse_offset = event.relative
 			
-			var zoom : int = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
-			if zoom:
-				_direction.y = zoom
-				
-			#print(_total_pitch)
-			#print("UAS " , Input.get_action_strength(up_action) , " DAS " , Input.get_action_strength(down_action), " Y " , _direction.y)
+		_rotation_offset.x = Input.get_action_strength(rotate_right_action) - Input.get_action_strength(rotate_left_action)
+		_rotation_offset.y = Input.get_action_strength(rotate_down_action) - Input.get_action_strength(rotate_up_action)
+
+	if movement and _triggered:
+		_direction.x += Input.get_action_strength(right_action) - Input.get_action_strength(left_action)
+		_direction.z += Input.get_action_strength(backward_action) - Input.get_action_strength(forward_action)
+		
+		var zoom : int = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
+		if (zoom == 1 and translation.y < y_max) or (zoom == -1 and translation.y > y_min): 
+			var a = deg2rad(-45 + _total_pitch)
+			var y_amount = cos(a)
+			var z_amount = sin(a)
+			_direction.y = (zoom * y_amount)
+			_direction.z += (zoom * y_amount)
 			
-			var q := Quat(Vector3(0.0, deg2rad(rotation_degrees.y), 0.0))
-			_direction = q.xform(_direction)
-			#print("heading ", rotation_degrees.y, " direction ", _direction)
-			
+		print(zoom , " " , _direction.z)
+		#print("UAS " , Input.get_action_strength(up_action) , " DAS " , Input.get_action_strength(down_action), " Y " , _direction.y)
+		
+		var q := Quat(Vector3(0.0, deg2rad(rotation_degrees.y), 0.0))
+		_direction = q.xform(_direction)
+		#print("heading ", rotation_degrees.y, " direction ", _direction)
+		
 
 func _process(delta):
 	if _triggered:
 		_update_views(delta)
 
 func _update_views(delta):
+	if !current:
+		return
 	if privot:
 		_update_distance()
 	if freelook:
@@ -177,8 +186,9 @@ func _update_movement(delta):
 		global_translate(_speed * delta)
 	translation.y = clamp(translation.y, y_min, y_max)
 	
-	_direction.y = 0
-
+	# Zero
+	_direction = Vector3()
+	
 func _update_rotation(delta):
 	var offset = Vector2();
 	
