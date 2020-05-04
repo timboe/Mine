@@ -24,13 +24,13 @@ func set_id(var i: int):
 	id = i
 	
 func _ready():
-	mat.emission_enabled = false
 	if state == State.DISABLED:
 		return
 	parent_physics_body.connect("mouse_entered", self, "_on_StaticBody_mouse_entered")
 	parent_physics_body.connect("mouse_exited", self, "_on_StaticBody_mouse_exited")
 	parent_physics_body.connect("input_event", self, "_on_StaticBody_input_event")
 	mat.emission_energy = 1.0 
+	mat.emission_enabled = false
 
 func update_HOVER_color(var is_hover : bool):
 	if state >= State.SELECTED:

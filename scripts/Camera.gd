@@ -126,7 +126,7 @@ func _input(event):
 			_direction.y = (zoom * y_amount)
 			_direction.z += (zoom * y_amount)
 			
-		print(zoom , " " , _direction.z)
+		#print(zoom , " " , _direction.z)
 		#print("UAS " , Input.get_action_strength(up_action) , " DAS " , Input.get_action_strength(down_action), " Y " , _direction.y)
 		
 		var q := Quat(Vector3(0.0, deg2rad(rotation_degrees.y), 0.0))

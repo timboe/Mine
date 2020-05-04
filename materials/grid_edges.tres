@@ -1,0 +1,67 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=2]
+
+[sub_resource type="Shader" id=3]
+code = "shader_type spatial;
+render_mode unshaded;
+
+uniform float SPEED = 1.0;
+uniform float STEP_SIZE = 10.0;
+uniform float SHAPE_LENGTH = 100.0;
+uniform float MOUNTAIN_MAX_HEIGHT = 100.0;
+uniform float MOUNTAIN_MAX_COLOUR = 0.5;
+uniform vec4 TOP_COLOUR = vec4(1.0, 0.0, 1.0, 1.0);
+uniform bool SCROLL = false;
+//
+const float THIRD = 1.0 / 3.0;
+
+void DO_MOUNTAIN(inout vec3 MVERTEX, inout vec4 MCOLOR, inout vec4 MINSTANCE_CUSTOM) {
+	float height = 0.0;
+	// Get mountain height moving along z
+	float z = MVERTEX.z / SHAPE_LENGTH;
+	if (z < THIRD) {
+		height = mix(MINSTANCE_CUSTOM.x, MINSTANCE_CUSTOM.y, z * 3.0);
+	} else if (z < 2.0*THIRD) {
+		z -= THIRD;
+		height = mix(MINSTANCE_CUSTOM.y, MINSTANCE_CUSTOM.z, z * 3.0);
+	} else {
+		z -= 2.0*THIRD;
+		height = mix(MINSTANCE_CUSTOM.z, MINSTANCE_CUSTOM.a, z * 3.0);
+	}
+	// Now modulate along x
+	float x = MVERTEX.x / SHAPE_LENGTH;
+	if (x <= 0.5) {
+		height *= x * 2.0;
+	} else {
+		x -= 0.5;
+		height *= 1.0 - (x * 2.0);
+	}
+	MVERTEX.y += MOUNTAIN_MAX_HEIGHT * height;
+	MVERTEX.y = max(0, MVERTEX.y);
+	MCOLOR = mix(MCOLOR, TOP_COLOUR, (MVERTEX.y / MOUNTAIN_MAX_COLOUR) / MOUNTAIN_MAX_HEIGHT);
+}
+
+void vertex() {
+	if (SCROLL) {
+		float time = TIME * SPEED;
+		bool first = (VERTEX.x == 0.0);
+		VERTEX.x -= (time - floor(time)) * STEP_SIZE;
+		if (INSTANCE_CUSTOM.x > 0.0) {
+			DO_MOUNTAIN(VERTEX, COLOR, INSTANCE_CUSTOM);
+		}
+	}
+}
+
+void fragment() {
+	ALBEDO = COLOR.xyz;
+}
+"
+
+[resource]
+shader = SubResource( 3 )
+shader_param/SPEED = 1.0
+shader_param/STEP_SIZE = 10.0
+shader_param/SHAPE_LENGTH = 100.0
+shader_param/MOUNTAIN_MAX_HEIGHT = 100.0
+shader_param/MOUNTAIN_MAX_COLOUR = 0.5
+shader_param/TOP_COLOUR = Plane( 1, 0, 1, 1 )
+shader_param/SCROLL = false

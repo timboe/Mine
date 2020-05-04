@@ -2,9 +2,9 @@ tool
 extends Spatial
 class_name CairoTilesetGen
 
-onready var base_material : SpatialMaterial = preload("res://test_materials/aluminium.tres")
-onready var outline_material : ShaderMaterial = preload("res://materials/Grid_material.tres")
-var disabled_material := SpatialMaterial.new()
+onready var base_material : SpatialMaterial = preload("res://materials/aluminium.tres")
+onready var outline_material : ShaderMaterial = preload("res://materials/grid_edges.tres")
+onready var disabled_material : ShaderMaterial = preload("res://materials/grid_faces.tres")
 
 var rand := RandomNumberGenerator.new()
 
@@ -144,26 +144,31 @@ func generate_cairo_pentagon() -> ArrayMesh:
 	outline_tool.commit(array_mesh)
 	return array_mesh
 
-func new_physics_body() -> StaticBody:
-	var physics_body_instance = StaticBody.new()
+func populate(var physics_body_instance : StaticBody):
 	var mesh_instance = MeshInstance.new()
 	mesh_instance.use_in_baked_light = true
 	mesh_instance.set_script(tile_script)
 	mesh_instance.set_mesh(cairo_mesh)
-	mesh_instance.set_surface_material(0, base_material.duplicate())
+	# visible used as flag
+	var mat : Material
+	if physics_body_instance.visible:
+		mat = base_material.duplicate() 
+	else:
+		mat = disabled_material
+		if not Engine.editor_hint: mesh_instance.set_disabled()
+	physics_body_instance.visible = true # Reset flag
+	mesh_instance.set_surface_material(0, mat)
 	mesh_instance.set_surface_material(1, outline_material)
-	if not Engine.editor_hint:
-		mesh_instance.set_id(tileID)
+	if not Engine.editor_hint: mesh_instance.set_id(tileID)
 	tileID += 1
 	physics_body_instance.add_child(mesh_instance)
 	var cs = CollisionShape.new()
 	cs.set_shape(cairo_mesh_shape)
 	physics_body_instance.add_child(cs)
-	return physics_body_instance
 
-func check_disabled(var physics_body : StaticBody) -> bool:
-	var t_local : Vector3 = physics_body.translation
-	var t : Vector3 = physics_body.to_global(t_local)
+func check_disabled(var physics_body_instance : StaticBody) -> bool:
+	var t_local : Vector3 = physics_body_instance.translation
+	var t : Vector3 = physics_body_instance.to_global(t_local)
 	var distance_v := Vector2()
 	var max_outer : float = TRIPLETS*3*UNIT*2
 	if t.z < 0 or t.x < 0:
@@ -172,23 +177,20 @@ func check_disabled(var physics_body : StaticBody) -> bool:
 		distance_v.y = max(t.x, t.z) - max_outer
 	var distance = max(distance_v.x, distance_v.y)
 	if distance > 0:
-		var mesh_instance : MeshInstance = physics_body.get_child(0)
-		mesh_instance.set_surface_material(0, disabled_material)
-		if not Engine.editor_hint:
-			mesh_instance.set_disabled()
+		physics_body_instance.visible = false # Used to communicate w below
 		if distance > UNIT*4 and distance > rand.randf_range(0.0, UNIT*8):
 			return true
 	return false
 
-func addCluster(var xOff : int, var yOff : int):
+func add_cluster(var xOff : int, var yOff : int):
 	var spatial : Spatial = Spatial.new()
 	var yMod : float = RIGHT_POINT_Y * xOff
 	var xMod : float = RIGHT_POINT_Y * yOff
 	spatial.translate(Vector3(yMod + yOff*(TOP_POINT_X + TOP_POINT_Y), 0, xOff*(UNIT + RIGHT_POINT_X) - xMod))
-	var physics_body_a : StaticBody = new_physics_body() # TL
-	var physics_body_b : StaticBody = new_physics_body() # BL
-	var physics_body_c : StaticBody = new_physics_body() # BR
-	var physics_body_d : StaticBody = new_physics_body() # TR
+	var physics_body_a := StaticBody.new() # TL
+	var physics_body_b := StaticBody.new() # BL
+	var physics_body_c := StaticBody.new() # BR
+	var physics_body_d := StaticBody.new() # TR
 	physics_body_a.translate(Vector3(UNIT,0,0))
 	physics_body_b.translate(Vector3(UNIT,0,0))
 	physics_body_c.translate(Vector3(UNIT + RIGHT_POINT_Y, 0, UNIT + RIGHT_POINT_X))
@@ -201,20 +203,15 @@ func addCluster(var xOff : int, var yOff : int):
 	spatial.add_child(physics_body_c)
 	spatial.add_child(physics_body_d)
 	add_child(spatial)
-	if check_disabled(physics_body_a) : spatial.remove_child(physics_body_a)
-	if check_disabled(physics_body_b) : spatial.remove_child(physics_body_b)
-	if check_disabled(physics_body_c) : spatial.remove_child(physics_body_c)
-	if check_disabled(physics_body_d) : spatial.remove_child(physics_body_d)
+	physics_body_a.queue_free() if check_disabled(physics_body_a) else populate(physics_body_a)
+	physics_body_b.queue_free() if check_disabled(physics_body_b) else populate(physics_body_b)
+	physics_body_c.queue_free() if check_disabled(physics_body_c) else populate(physics_body_c)
+	physics_body_d.queue_free() if check_disabled(physics_body_d) else populate(physics_body_d)
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
 	cairo_mesh = generate_cairo_pentagon()
 	cairo_mesh_shape.set_points(cairo_mesh.get_faces())
-	disabled_material.albedo_color = Color(0/255.0, 80/255.0, 80/255.0)
-	disabled_material.roughness = base_material.roughness
-	disabled_material.metallic = base_material.metallic
-	disabled_material.anisotropy_enabled = base_material.anisotropy_enabled
-	disabled_material.anisotropy = base_material.anisotropy
 	#disabled_material.flags_unshaded = true
 	# Colourful
 	#mat_a.albedo_color = Color(204/255.0, 136/255.0, 204/255.0)
@@ -234,4 +231,4 @@ func _ready():
 			floor_v = Vector2(floor(x/3.0), floor(y/3.0))
 			if (y+border < 0 - floor_v.x  ||  y-border > arena - floor_v.x): continue
 			if (x+border < 0 + floor_v.y  ||  x-border > arena + floor_v.y): continue
-			addCluster(x, y)
+			add_cluster(x, y)
