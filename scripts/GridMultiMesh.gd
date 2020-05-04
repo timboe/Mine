@@ -9,6 +9,7 @@ enum Slope {STEEP, SHALLOW}
 var mountain : int = Mountain.GOING_UP
 var slope : int = Slope.STEEP
 
+var curries : Array
 var current : Array
 var next : Array
 var initial_mountain_index : int
@@ -58,20 +59,11 @@ func _process(delta):
 	timer -= CHANGE_TIME
 	next = generate_mountain()
 	var tween : Tween = $Tween
-	print("Morph")
-	#tween.interpolate_property(multimesh, "get_instance_custom_data(25)", current[25], next[25], 
-	#  MORPH_TIME, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
 	for i in range(EXTENT):
-		var curry_inst = Curry.instance()
-		curry_inst.curry(self, "update_mountain", [initial_mountain_index + i])
-		tween.interpolate_method(curry_inst, "call_me", current[i], next[i], 
+		tween.interpolate_method(curries[i], "call_me", current[i], next[i], 
 		MORPH_TIME, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
-	#curry1.curry(self, "update_mountain", [25])
-	#tween.interpolate_method(curry1, "call_me", current[25], next[25], 
-	#	MORPH_TIME, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
 	tween.interpolate_callback(self, MORPH_TIME, "switch_array")
 	tween.start()
-	#curry1.call_me(Color(1,1,1,1))
 
 func _ready():
 	rand.randomize()
@@ -110,7 +102,13 @@ func _ready():
 			  Vector3(x * grid_mesh_instance.LENGTH, 0, z * grid_mesh_instance.LENGTH)))
 	current = generate_mountain()
 	for i in range(EXTENT):
-		multimesh.set_instance_custom_data(initial_mountain_index + i, current[i])
+		var curry_inst = Curry.instance()
+		curry_inst.curry(self, "update_mountain", [initial_mountain_index + i])
+		curry_inst.call_me(current[i])
+		curries.push_back(curry_inst)
+	# Set collison for floor
+	var collision_box : BoxShape = $Area/CollisionShape.shape
+	collision_box.extents = Vector3(EXTENT * grid_mesh_instance.LENGTH, 1.0, EXTENT * grid_mesh_instance.LENGTH)
 	
 func generate_mountain() -> Array:
 	var array = []

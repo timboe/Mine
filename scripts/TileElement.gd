@@ -93,6 +93,7 @@ func done_deconstruct():
 
 func _on_StaticBody_mouse_entered():
 	update_HOVER_color(true)
+	GlobalVars.SELECTED_NODE = self
 	if Input.is_mouse_button_pressed(1):
 		update_selected()
 

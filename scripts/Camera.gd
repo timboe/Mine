@@ -19,14 +19,9 @@ export (float, 0.0, 1.0) var sensitivity = 0.5
 export (float, 0.0, 0.999, 0.001) var smoothness = 0.5 setget set_smoothness
 export (int, 0, 360) var yaw_limit = 360
 export (int, 0, 360) var pitch_limit = 360
-export (int, -100, 100) var y_min = 30
+export (int, -100, 100) var y_min = 20
 export (int, -100, 100) var y_max = 60
 
-# Pivot Settings
-export(NodePath) var privot setget set_privot
-export var distance = 5.0 setget set_distance
-export var rotate_privot = false
-export var collisions = true setget set_collisions
 
 # Movement settings
 export var movement = true
@@ -84,11 +79,6 @@ func _ready():
 		rotate_down_action,
 	])
 
-	if privot:
-		privot = get_node(privot)
-	else:
-		privot = null
-
 	set_enabled(enabled)
 
 	#if use_gui:
@@ -97,8 +87,6 @@ func _ready():
 	#	add_child(_gui)
 
 func _input(event):
-	if event.is_action_pressed("toggle_fullscreen"):
-		OS.window_fullscreen = !OS.window_fullscreen
 	
 	if len(trigger_action)!=0:
 		if event.is_action_pressed(trigger_action):
@@ -141,29 +129,17 @@ func _process(delta):
 func _update_views(delta):
 	if !current:
 		return
-	if privot:
-		_update_distance()
 	if freelook:
 		_update_rotation(delta)
 	if movement:
 		_update_movement(delta)
 
-func _physics_process(delta):
-	if _triggered:
-		_update_views_physics(delta)
-
-func _update_views_physics(delta):
-	# Called when collision are enabled
-	_update_distance()
-	if freelook:
-		_update_rotation(delta)
-
-	var space_state = get_world().get_direct_space_state()
-	var obstacle = space_state.intersect_ray(privot.get_translation(),  get_translation())
-	if not obstacle.empty():
-		set_translation(obstacle.position)
 
 func _update_movement(delta):
+	
+	if GlobalVars.camera_status != GlobalVars.CameraStatus.OVERHEAD:
+		return
+	
 	var offset = max_speed * acceleration * _direction
 
 	_speed.x = clamp(_speed.x + offset.x, -max_speed.x, max_speed.x)
@@ -210,50 +186,18 @@ func _update_rotation(delta):
 	_total_yaw += _yaw
 	_total_pitch += _pitch
 
-	if privot:
-		var target = privot.get_translation()
-		var dist = get_translation().distance_to(target)
+	rotate_y(deg2rad(-_yaw))
+	rotate_object_local(Vector3(1,0,0), deg2rad(-_pitch))
 
-		set_translation(target)
-		rotate_y(deg2rad(-_yaw))
-		rotate_object_local(Vector3(1,0,0), deg2rad(-_pitch))
-		translate(Vector3(0.0, 0.0, dist))
-
-		if rotate_privot:
-			privot.rotate_y(deg2rad(-_yaw))
-	else:
-		rotate_y(deg2rad(-_yaw))
-		rotate_object_local(Vector3(1,0,0), deg2rad(-_pitch))
-
-func _update_distance():
-	var t = privot.get_translation()
-	t.z -= distance
-	set_translation(t)
 
 func _update_process_func():
-	# Use physics process if collision are enabled
-	if collisions and privot:
-		set_physics_process(true)
-		set_process(false)
-	else:
-		set_physics_process(false)
-		set_process(true)
+	set_process(true)
 
 func _check_actions(actions=[]):
 	if OS.is_debug_build():
 		for action in actions:
 			if not InputMap.has_action(action):
 				print('WARNING: No action "' + action + '"')
-
-func set_privot(value):
-	privot = value
-	_update_process_func()
-	if len(trigger_action)!=0:
-		_update_views(0)
-
-func set_collisions(value):
-	collisions = value
-	_update_process_func()
 
 func set_enabled(value):
 	enabled = value
@@ -269,5 +213,3 @@ func set_enabled(value):
 func set_smoothness(value):
 	smoothness = clamp(value, 0.001, 0.999)
 
-func set_distance(value):
-	distance = max(0, value)
