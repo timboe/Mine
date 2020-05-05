@@ -16,7 +16,7 @@ _data = [ Vector2( 0, 0.617045 ), 0.0, 0.0, 0, 0, Vector2( 1, 0 ), 0.0, 0.0, 0, 
 [sub_resource type="CurveTexture" id=4]
 curve = SubResource( 3 )
 
-[sub_resource type="ParticlesMaterial" id=12]
+[sub_resource type="ParticlesMaterial" id=5]
 emission_shape = 2
 emission_box_extents = Vector3( 5, 0.1, 5 )
 direction = Vector3( 0, 1, 0 )
@@ -31,7 +31,7 @@ scale = 8.0
 scale_curve = SubResource( 4 )
 color_ramp = SubResource( 2 )
 
-[sub_resource type="SpatialMaterial" id=13]
+[sub_resource type="SpatialMaterial" id=6]
 flags_unshaded = true
 vertex_color_use_as_albedo = true
 params_blend_mode = 1
@@ -41,10 +41,10 @@ particles_anim_v_frames = 1
 particles_anim_loop = false
 albedo_texture = ExtResource( 3 )
 
-[sub_resource type="QuadMesh" id=14]
-material = SubResource( 13 )
+[sub_resource type="QuadMesh" id=7]
+material = SubResource( 6 )
 
-[sub_resource type="CubeMesh" id=15]
+[sub_resource type="CubeMesh" id=8]
 
 [sub_resource type="ConvexPolygonShape" id=9]
 points = PoolVector3Array( -1, 1, 1, 1, 1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 1, -1, -1, 1, -1, 1, -1, -1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, -1, 1, 1, 1, -1, 1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1, -1, -1, -1, -1, -1, 1, -1, 1, -1, -1 )
@@ -64,8 +64,8 @@ amount = 128
 lifetime = 0.5
 one_shot = true
 explosiveness = 0.8
-process_material = SubResource( 12 )
-draw_pass_1 = SubResource( 14 )
+process_material = SubResource( 5 )
+draw_pass_1 = SubResource( 7 )
 
 [node name="Tween" type="Tween" parent="."]
 
@@ -74,7 +74,7 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 146.931, 57.334, 50.4493 )
 can_sleep = false
 
 [node name="MeshInstance" type="MeshInstance" parent="RigidBody"]
-mesh = SubResource( 15 )
+mesh = SubResource( 8 )
 material/0 = null
 
 [node name="CollisionShape" type="CollisionShape" parent="RigidBody"]
