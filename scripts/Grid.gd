@@ -34,6 +34,8 @@ func _init():
 			mesh_tool.add_vertex(Vector3((step_x+0) * STEP_SIZE, 0.0, (step_y+1) * STEP_SIZE))
 	surface_tool.index()
 	mesh_tool.index()
+	mesh_tool.generate_normals()
+	mesh_tool.generate_tangents()
 	var m : ArrayMesh = mesh_tool.commit()
 	surface_tool.commit(m)  
 	set_mesh(m)

@@ -43,7 +43,6 @@ export var up_action = "ui_zoom_in"
 export var down_action = "ui_zoom_out"
 export var trigger_action = ""
 
-
 # Gui settings
 #export var use_gui = true
 #export var gui_action = "ui_cancel"
@@ -87,53 +86,37 @@ func _ready():
 	#	add_child(_gui)
 
 func _input(event):
-	
-	if len(trigger_action)!=0:
-		if event.is_action_pressed(trigger_action):
-			_triggered=true
-		elif event.is_action_released(trigger_action):
-			_triggered=false
-	else:
-		_triggered=true
-	if freelook and _triggered:
-		if event is InputEventMouseMotion and Input.is_mouse_button_pressed(2):
-			_mouse_offset = event.relative
-			
-		_rotation_offset.x = Input.get_action_strength(rotate_right_action) - Input.get_action_strength(rotate_left_action)
-		_rotation_offset.y = Input.get_action_strength(rotate_down_action) - Input.get_action_strength(rotate_up_action)
+	if event is InputEventMouseMotion and Input.is_mouse_button_pressed(2):
+		_mouse_offset = event.relative
 
-	if movement and _triggered:
-		_direction.x += Input.get_action_strength(right_action) - Input.get_action_strength(left_action)
-		_direction.z += Input.get_action_strength(backward_action) - Input.get_action_strength(forward_action)
+func _poll():
+	#_rotation_offset.x = Input.get_action_strength(rotate_right_action) - Input.get_action_strength(rotate_left_action)
+	#_rotation_offset.y = Input.get_action_strength(rotate_down_action) - Input.get_action_strength(rotate_up_action)
+
+	_direction.x += Input.get_action_strength(right_action) - Input.get_action_strength(left_action)
+	_direction.z += Input.get_action_strength(backward_action) - Input.get_action_strength(forward_action)
 		
-		var zoom : int = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
-		if (zoom == 1 and translation.y < y_max) or (zoom == -1 and translation.y > y_min): 
-			var a = deg2rad(-45 + _total_pitch)
-			var y_amount = cos(a)
-			var z_amount = sin(a)
-			_direction.y = (zoom * y_amount)
-			_direction.z += (zoom * y_amount)
+	var zoom : int = Input.get_action_strength(up_action) - Input.get_action_strength(down_action)
+	if (zoom == 1 and translation.y < y_max) or (zoom == -1 and translation.y > y_min): 
+		var a = deg2rad(-45 + _total_pitch)
+		var y_amount = cos(a)
+		var z_amount = sin(a)
+		_direction.y = (zoom * y_amount)
+		_direction.z += (zoom * y_amount)
 			
-		#print(zoom , " " , _direction.z)
-		#print("UAS " , Input.get_action_strength(up_action) , " DAS " , Input.get_action_strength(down_action), " Y " , _direction.y)
+	#print(zoom , " " , _direction.z)
+	#print("UAS " , Input.get_action_strength(up_action) , " DAS " , Input.get_action_strength(down_action), " Y " , _direction.y)
 		
-		var q := Quat(Vector3(0.0, deg2rad(rotation_degrees.y), 0.0))
-		_direction = q.xform(_direction)
-		#print("heading ", rotation_degrees.y, " direction ", _direction)
-		
+	var q := Quat(Vector3(0.0, rotation.y, 0.0))
+	_direction = q.xform(_direction)
+	#print("heading ", rotation_degrees.y, " direction ", _direction)
 
 func _process(delta):
-	if _triggered:
-		_update_views(delta)
-
-func _update_views(delta):
 	if !current:
 		return
-	if freelook:
-		_update_rotation(delta)
-	if movement:
-		_update_movement(delta)
-
+	_poll()
+	_update_rotation(delta)
+	_update_movement(delta)
 
 func _update_movement(delta):
 	
@@ -155,23 +138,20 @@ func _update_movement(delta):
 		_speed.y *= (1.0 - deceleration)
 	if _direction.z == 0:
 		_speed.z *= (1.0 - deceleration)
-
-	if local:
-		translate(_speed * delta)
-	else:
-		global_translate(_speed * delta)
+		
+	global_translate(_speed * delta)
 	translation.y = clamp(translation.y, y_min, y_max)
 	
 	# Zero
 	_direction = Vector3()
-	
+
 func _update_rotation(delta):
 	var offset = Vector2();
 	
-	if not freelook_mode == Freelook_Modes.INPUT_ACTION:
-		offset += _mouse_offset * sensitivity
-	if not freelook_mode == Freelook_Modes.MOUSE: 
-		offset += _rotation_offset * sensitivity * ROTATION_MULTIPLIER * delta
+	#if not freelook_mode == Freelook_Modes.INPUT_ACTION:
+	offset += _mouse_offset * sensitivity
+	#if not freelook_mode == Freelook_Modes.MOUSE: 
+	#	offset += _rotation_offset * sensitivity * ROTATION_MULTIPLIER * delta
 	
 	_mouse_offset = Vector2()
 
@@ -212,4 +192,3 @@ func set_enabled(value):
 
 func set_smoothness(value):
 	smoothness = clamp(value, 0.001, 0.999)
-

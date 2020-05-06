@@ -83,13 +83,12 @@ func do_deconstruct_b():
 	particles_instance = $"../../../Particles".duplicate()
 	parent_physics_body.add_child(particles_instance)
 	particles_instance.emitting = true
+	$"/root/World/CameraManager".add_trauma(0.20, to_global(Vector3.ZERO), fall_time)
 	
 func done_deconstruct():
 	print("Removed " + str(id))
 	state = State.DESTROYED
 	particles_instance.queue_free()
-	#var probe : GIProbe = get_tree().get_root().get_node("World/GIProbe")
-	#probe.bake()
 
 func _on_StaticBody_mouse_entered():
 	update_HOVER_color(true)

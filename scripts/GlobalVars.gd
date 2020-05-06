@@ -1,3 +1,4 @@
+tool
 extends Node
 
 enum CameraStatus {OVERHEAD, TO_FPS, FPS, TO_OVERHEAD}

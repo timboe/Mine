@@ -14,12 +14,9 @@ var current : Array
 var next : Array
 var initial_mountain_index : int
 
-var timer : float = 0
-
 # Cannot have min=0 here as != 0 tells the shader to do the mountain
 const MOUNTAIN_LIMITS := Vector2(0.1, 1.0)
 const EXTENT : int = 50
-const CHANGE_TIME : float = 5.0
 const MORPH_TIME : float = 1.0
 
 func mountain_range(var x : float) -> float:
@@ -48,22 +45,6 @@ func mountain_range(var x : float) -> float:
 
 func update_mountain(var i : int, var c : Color):
 	multimesh.set_instance_custom_data(i, c)
-
-func switch_array():
-	current = next
-
-func _process(delta):
-	timer += delta
-	if (timer < CHANGE_TIME):
-		return
-	timer -= CHANGE_TIME
-	next = generate_mountain()
-	var tween : Tween = $Tween
-	for i in range(EXTENT):
-		tween.interpolate_method(curries[i], "call_me", current[i], next[i], 
-		MORPH_TIME, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
-	tween.interpolate_callback(self, MORPH_TIME, "switch_array")
-	tween.start()
 
 func _ready():
 	rand.randomize()
@@ -122,3 +103,13 @@ func generate_mountain() -> Array:
 		previous_mountain = custom.a
 		array.push_back(custom)
 	return array
+
+
+func _on_Timer_timeout():
+	current = next if !next.empty() else current
+	next = generate_mountain()
+	var tween : Tween = $Tween
+	for i in range(EXTENT):
+		tween.interpolate_method(curries[i], "call_me", current[i], next[i], 
+		MORPH_TIME, Tween.TRANS_SINE, Tween.EASE_IN_OUT)
+	tween.start()
