@@ -7,12 +7,19 @@ const JUMP_SPEED = 18
 const ACCEL = 4.5
 
 var dir = Vector3()
+var jaggies : float = 0
+var mouse_initial : bool = true
+
+const JAGGIES_UPDATE := 0.05
 
 const DEACCEL= 16
 const MAX_SLOPE_ANGLE = 40
 
 onready var camera : Camera = $Rotation_Helper/Camera
 onready var rotation_helper : Spatial = $Rotation_Helper
+onready var ray : RayCast = $Rotation_Helper/RayCast
+onready var ray_render : ImmediateGeometry = $Rotation_Helper/RayRender
+onready var rand := RandomNumberGenerator.new()
 
 var MOUSE_SENSITIVITY = 0.4
 
@@ -62,6 +69,50 @@ func process_input(delta):
 		else:
 			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	# ----------------------------------
+	
+	# Casting and selecting
+	if Input.is_mouse_button_pressed(1):
+		jaggies += delta
+		ray.force_raycast_update()
+		if jaggies > JAGGIES_UPDATE:
+			jaggies -= JAGGIES_UPDATE
+			ray_render.clear()
+			if ray.is_colliding():
+				var local = ray_render.get_global_transform().xform_inv( ray.get_collision_point() )
+				draw_jaggy_to(local.y)
+		var collider = ray.get_collider()
+		var wall = collider.get_child(0) if collider != null else null
+		if mouse_initial:
+			mouse_initial = false
+			if wall != null and wall.has_method("get_state"):
+				GlobalVars.SELECTING_MODE = (wall.call("get_state") == TileElement.State.BUILT)
+			else:
+				GlobalVars.SELECTING_MODE = true
+		if wall != null and wall.has_method("_on_StaticBody_mouse_entered"):
+			wall.call("_on_StaticBody_mouse_entered")
+			wall.call("_on_StaticBody_mouse_exited") # We don't want the hover highlight in FPS
+	else:
+		ray_render.clear()
+		mouse_initial = true
+		
+func draw_jaggy_to(var dist : float):
+	ray_render.begin(Mesh.PRIMITIVE_LINE_STRIP)
+	ray_render.set_color(Color.white)
+	ray_render.add_vertex(Vector3.ZERO)
+	var pos := Vector3.ZERO
+	ray_render.add_vertex(pos)
+	# Note, in player coordinates, -y is forwards....
+	while pos.y > dist:
+		pos.x += rand.randf_range(-0.1, 0.1)
+		pos.z += rand.randf_range(-0.1, 0.1)
+		pos.y += rand.randf_range(-3.0, 1.0) if pos.y > -5.0 else rand.randf_range(-3.0, 0.0)
+		if pos.y <= dist:
+			pos = Vector3(0, dist, 0)
+		ray_render.add_vertex(pos)
+	#for i in range( rand.randi_range(0,5) ):
+	#	ray_render.add_vertex(Vector3.ZERO)
+	#	ray_render.add_vertex(Vector3(rand.randf_range(-0.1, 0.1), dist, rand.randf_range(-0.1, 0.1)))
+	ray_render.end()
 
 func process_movement(delta):
 	if !camera.current:
@@ -90,6 +141,9 @@ func process_movement(delta):
 	vel = move_and_slide(vel, Vector3(0, 1, 0), 0.05, 4, deg2rad(MAX_SLOPE_ANGLE))
 
 func _input(event):
+	#print("PL ", rotation_degrees)
+	#print("RH " ,rotation_helper.rotation_degrees)
+	
 	if !camera.current:
 		return
 

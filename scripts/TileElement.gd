@@ -1,5 +1,7 @@
 extends MeshInstance
 
+class_name TileElement
+
 var id := 0
 
 enum State {BUILT, SELECTED, BEING_DESTROYED, DESTROYED, DISABLED}
@@ -9,6 +11,7 @@ var particles_instance : Particles
 onready var mat : SpatialMaterial = get_surface_material(0)
 onready var parent_physics_body : StaticBody = get_parent()
 onready var tween : Tween = $"../../../Tween"
+onready var camera_manager : Node = $"/root/World/CameraManager"
 onready var HEIGHT : float = $"../../../../CairoTilesetGen".HEIGHT
 
 const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
@@ -75,20 +78,25 @@ func do_deconstruct_a():
 func do_deconstruct_b():
 	mat.emission_enabled = false
 	var fall_time : float = GlobalVars.rand.randf_range(4.5, 5.5)
+	camera_manager.chroma(false)
+	camera_manager.slow_mo(true)
+	camera_manager.add_trauma(0.20, to_global(Vector3.ZERO), fall_time)
 	tween.interpolate_property(parent_physics_body, "translation:y",
 		null, -HEIGHT, fall_time,
 		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
 	tween.interpolate_callback(self, fall_time, "done_deconstruct")
+	tween.interpolate_callback(camera_manager, 0.25, "slow_mo", false)
 	tween.start()
 	particles_instance = $"../../../Particles".duplicate()
 	parent_physics_body.add_child(particles_instance)
 	particles_instance.emitting = true
-	$"/root/World/CameraManager".add_trauma(0.20, to_global(Vector3.ZERO), fall_time)
+
 	
 func done_deconstruct():
 	print("Removed " + str(id))
 	state = State.DESTROYED
 	particles_instance.queue_free()
+	camera_manager.chroma(true)
 
 func _on_StaticBody_mouse_entered():
 	update_HOVER_color(true)
@@ -105,3 +113,5 @@ func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, 
 			GlobalVars.SELECTING_MODE = (state == State.BUILT)
 			update_selected()
 
+func get_state() -> int:
+	return state

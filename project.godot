@@ -13,9 +13,15 @@ _global_script_classes=[ {
 "class": "CairoTilesetGen",
 "language": "GDScript",
 "path": "res://scripts/CairoTilesetGen.gd"
+}, {
+"base": "MeshInstance",
+"class": "TileElement",
+"language": "GDScript",
+"path": "res://scripts/TileElement.gd"
 } ]
 _global_script_class_icons={
-"CairoTilesetGen": ""
+"CairoTilesetGen": "",
+"TileElement": ""
 }
 
 [application]

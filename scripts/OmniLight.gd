@@ -3,13 +3,15 @@ extends OmniLight
 const HEIGHT : float = 5.0
 var floor_lowered : bool = false
 onready var camera : Camera = $"../Camera" 
+onready var camera_manger : Node = $"../CameraManager"
+
 onready var desired_height : float = translation.y
 
 func _physics_process(var _delta : float):
 	visible = camera.current
 	if !visible:
 		return
-	if GlobalVars.camera_status != GlobalVars.CameraStatus.OVERHEAD:
+	if camera_manger.camera_status != camera_manger.CameraStatus.OVERHEAD:
 		return
 	var mouse_pos = get_viewport().get_mouse_position()
 	var from = camera.project_ray_origin(mouse_pos)

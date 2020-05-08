@@ -21,8 +21,8 @@ void fragment() {
     vec3 og_color = textureLod( SCREEN_TEXTURE, SCREEN_UV, 0.0).rgb;
 
     // cache screen witch chroma (r/b shifted by amount)
-    chroma.r = textureLod( SCREEN_TEXTURE, SCREEN_UV + vec2(amount * vig, 0.), 0.0).r;
-    chroma.g = og_color.g;
+    chroma.r = og_color.r;
+    chroma.g = textureLod( SCREEN_TEXTURE, SCREEN_UV + vec2(amount * vig, 0.), 0.0).g;
     chroma.b = textureLod( SCREEN_TEXTURE, SCREEN_UV - vec2(amount * vig, 0.), 0.0).b;
  
     ALBEDO = chroma;

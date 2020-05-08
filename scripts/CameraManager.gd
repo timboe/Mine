@@ -1,5 +1,8 @@
 extends Node
 
+enum CameraStatus {OVERHEAD, TO_FPS, FPS, TO_OVERHEAD}
+onready var camera_status : int = CameraStatus.OVERHEAD
+
 ##############################
 # Transition parameters
 
@@ -10,7 +13,7 @@ onready var overhead_camera : Camera = $"../Camera"
 onready var overhead_light : OmniLight = $"../OmniLight"
 onready var tween : Tween = $Tween
 onready var spawn_particles : Particles = $SpawnParticles
-#onready var chroma : ShaderMaterial = $"../Camera/Chroma".mesh.surface_get_material(0)
+onready var chroma : Mesh = $"../Camera/Chroma".mesh
 
 var quat_from : Quat
 var quat_to : Quat
@@ -20,6 +23,8 @@ const PLAYER_LOWER_DEPTH : float = 5.0
 const UNPOSESS_DISTANCE := Vector2(-40, 50)
 
 const TRANS := Tween.TRANS_SINE
+
+const SLOW_MO := 0.9
 
 ##############################
 # Shake parameters
@@ -37,6 +42,9 @@ const CHROMA_OFFSET_MAX_ADD := 100
 const CHROMA_VIN_BASE := 0.4
 const CHROMA_VIN_MAX_ADD := 0.2
 
+var chroma_disable_count : int = 0
+var slow_mo_count : int = 0
+
 var trauma := 0.0
 var time := 0.0
 var linger := 0.0
@@ -53,29 +61,49 @@ func quat_transform(var amount : float):
 
 func _input(event):
 	if event.is_action_pressed("capture_toggle"):
-		match GlobalVars.camera_status:
-			GlobalVars.CameraStatus.OVERHEAD:
+		match camera_status:
+			CameraStatus.OVERHEAD:
 				to_fps_cam_start()
-			GlobalVars.CameraStatus.FPS:
+			CameraStatus.FPS:
 				to_overhead_cam_start()
 	if event.is_action_pressed("toggle_fullscreen"):
 		OS.window_fullscreen = !OS.window_fullscreen
 
+func chroma(var on : bool):
+	if on:
+		chroma_disable_count -= 1
+		if chroma_disable_count == 0:
+			print("Chroma on")
+			$"/root/World/Camera/Chroma".visible = true
+			$"/root/World/Player/Rotation_Helper/Camera/Chroma".visible = true
+			tween.interpolate_property(chroma.surface_get_material(0), 
+				"shader_param/offset", 0.0, 15.0, 1.0, Tween.TRANS_LINEAR, Tween.EASE_OUT)
+			tween.start()
+	else:
+		print("Chroma off")
+		chroma_disable_count += 1
+		$"/root/World/Camera/Chroma".visible = false
+		$"/root/World/Player/Rotation_Helper/Camera/Chroma".visible = false
+		chroma.surface_get_material(0).set_shader_param("offset", 0.0)
+		
+func slow_mo(var on : bool):
+	if on:
+		slow_mo_count += 1
+		Engine.time_scale = SLOW_MO
+	else:
+		slow_mo_count -= 1
+		if slow_mo_count == 0:
+			Engine.time_scale = 1.0
+
 func to_fps_cam_start():
-	GlobalVars.camera_status = GlobalVars.CameraStatus.TO_FPS
+	camera_status = CameraStatus.TO_FPS
 	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
 	if GlobalVars.SELECTED_NODE != null:
 		GlobalVars.SELECTED_NODE.call("_on_StaticBody_mouse_exited")
 	player.transform.origin = overhead_light.to_global(Vector3.ZERO)
 	player.transform.origin.y = 0 if overhead_light.floor_lowered else GlobalVars.FLOOR_HEIGHT
-	player.look_at( overhead_camera.to_global(Vector3.ZERO), Vector3.UP)
-	player.rotate_object_local(Vector3.UP, PI) # Actually, look AWAY
-	# Keep the actual rotation around x on the camera
-	#TODO clamp isn't working
-	fps_camera.rotation.x = player.rotation.x
-	fps_camera.rotation.x = clamp(fps_camera.rotation.x, -70, 70)
-	rot_helper.rotation.x = fps_camera.rotation.x
-	player.rotation.x = 0
+	player.rotation.y = overhead_camera.rotation.y
+	rot_helper.rotation.x = 0
 	var player_target = player.to_global(Vector3.ZERO)
 	var camera_target = fps_camera.to_global(Vector3.ZERO)
 	quat_from = Quat(overhead_camera.transform.basis)
@@ -94,34 +122,51 @@ func to_fps_cam_start():
 		0.0, 1.0, TRANSITION_TIME, TRANS, Tween.EASE_OUT)
 	tween.interpolate_callback(self, TRANSITION_TIME, "to_fps_cam_end")
 	tween.start()
-
+	chroma(false)
+	
 func to_fps_cam_end():
-	GlobalVars.camera_status = GlobalVars.CameraStatus.FPS
+	camera_status = CameraStatus.FPS
 	overhead_camera.current = false
 	fps_camera.current = true
 	spawn_particles.emitting = false
+	chroma(true)
 
 func to_overhead_cam_start():
-	GlobalVars.camera_status = GlobalVars.CameraStatus.TO_OVERHEAD
+	camera_status = CameraStatus.TO_OVERHEAD
 	var start : Vector3 = fps_camera.to_global(Vector3.ZERO)
 	var cam_xform = fps_camera.get_global_transform()
-	# Go first to the final position
-	overhead_camera.transform = cam_xform
+	# Go first to the srart position
+	
+	overhead_camera.transform.origin = start
+	overhead_camera.rotation.y = player.rotation.y
+	overhead_camera.rotation.x = rot_helper.rotation.x
+	# Save
+	var start_tf : Transform = overhead_camera.transform
+	
+	# Go to the final position
 	# Move back by 20m and set to 50m height
-	overhead_camera.transform.origin += -cam_xform.basis.z * UNPOSESS_DISTANCE.x
+	overhead_camera.transform.origin += player.get_global_transform().basis.z * UNPOSESS_DISTANCE.y
 	overhead_camera.transform.origin.y = UNPOSESS_DISTANCE.y
-	overhead_camera.look_at(start, Vector3.UP)
+	overhead_camera.rotation.x = deg2rad(-45)
+	# Save
 	var target_tf : Transform = overhead_camera.transform
+	
+	# Get target for player to move to
 	var player_target : Vector3 = player.to_global(Vector3.ZERO)
 	player_target.y -= PLAYER_LOWER_DEPTH
-	# Set to same as the fps_cam
-	overhead_camera.transform = cam_xform
+	
+	# Move overhead cam back to the start of its animation
+	overhead_camera.transform = start_tf
+	
+	# Turn it on
 	overhead_camera.current = true
 	fps_camera.current = false
-	quat_from = Quat(cam_xform.basis)
+	
+	# Interpolate
+	quat_from = Quat(start_tf.basis)
 	quat_to = Quat(target_tf.basis)
 	tween.interpolate_property(overhead_camera, "translation",
-		null, target_tf.origin, TRANSITION_TIME, TRANS, Tween.EASE_OUT)
+		start_tf.origin, target_tf.origin, TRANSITION_TIME, TRANS, Tween.EASE_OUT)
 	tween.interpolate_property(player, "translation",
 		null, player_target, TRANSITION_TIME, TRANS, Tween.EASE_OUT)
 	tween.interpolate_method(self, "quat_transform",
@@ -130,11 +175,14 @@ func to_overhead_cam_start():
 	tween.start()
 	spawn_particles.transform.origin = player.transform.origin
 	spawn_particles.emitting = true
+	chroma(false)
 
 func to_overhead_cam_end():
-	GlobalVars.camera_status = GlobalVars.CameraStatus.OVERHEAD
+	camera_status = CameraStatus.OVERHEAD
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	spawn_particles.emitting = false
+	# Give a sec for the effect to die off
+	tween.interpolate_callback(self, 1.0, "chroma", true);
 	
 func add_trauma(var amount : float, var from, var add_linger):
 	var c : Vector3 = overhead_camera.to_global(Vector3.ZERO) if overhead_camera.current else fps_camera.to_global(Vector3.ZERO)
@@ -158,6 +206,7 @@ func apply_shake(var delta : float):
 		trauma_mod = min(trauma + 0.4, 1.0)
 	if trauma_mod == 0:
 		return
+	#print(trauma_mod)
 	var shake := trauma_mod * trauma_mod
 	var offset_x := RUMBLE_OFFSET * shake * noise.get_noise_2d(0, time)
 	var offset_y := RUMBLE_OFFSET * shake * noise.get_noise_2d(time, 0)
@@ -167,8 +216,3 @@ func apply_shake(var delta : float):
 	else:
 		overhead_camera.h_offset = offset_x
 		overhead_camera.v_offset = offset_y
-	#chroma.set_shader_param("Offset", CHROMA_OFFSET_BASE + (CHROMA_OFFSET_MAX_ADD * shake))
-	#chroma.set_shader_param("Encroach", CHROMA_VIN_BASE + (CHROMA_VIN_MAX_ADD * shake))
-	var chroma : ShaderMaterial = $"../Camera/Chroma".mesh.surface_get_material(0)
-	chroma.set_shader_param("Offset", 100.0)
-	chroma.set_shader_param("Encroach", 1.0)
