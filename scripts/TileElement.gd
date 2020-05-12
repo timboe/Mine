@@ -8,11 +8,13 @@ enum State {BUILT, SELECTED, BEING_DESTROYED, DESTROYED, DISABLED}
 var state = State.BUILT 
 var particles_instance : Particles
 
+var neighbours : Array
+
 onready var mat : SpatialMaterial = get_surface_material(0)
 onready var parent_physics_body : StaticBody = get_parent()
 onready var tween : Tween = $"../../../Tween"
-onready var camera_manager : Node = $"/root/World/CameraManager"
-onready var HEIGHT : float = $"../../../../CairoTilesetGen".HEIGHT
+onready var camera_manager = $"/root/World/CameraManager"
+onready var HEIGHT : float = 20.0
 
 const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
 const HOVER_COLOUR : Color = Color(0/255.0, 45/255.0, 227/255.0)
@@ -20,14 +22,41 @@ const SELECT_COLOUR : Color = Color(125/255.0, 125/255.0, 0/255.0) # Not used di
 const HOVER_SELECT_COLOUR := HOVER_COLOUR + SELECT_COLOUR
 const HOVER_REMOVE_COLOUR : Color = Color(160/255.0, 0/255.0, 56/255.0)
 
+const FADE_TIME : float = 5.0
+
+# Only have one countdown timer
+var tween_active := false
+
 func set_disabled():
 	state = State.DISABLED
- 
+	
+func set_destroyed():
+	state = State.DESTROYED
+	
+func get_state() -> int:
+	return state
+	
 func set_id(var i: int):
 	id = i
 	
+func get_id():
+	return id
+	
+func add_neighbour(var n):
+	if !neighbours.has(n):
+		neighbours.append(n)
+		
+func any_neighbour_destroyed() -> bool:
+	for n in neighbours:
+		print("neighbour " , n , " state " , n.state)
+	print("---")
+	for n in neighbours:
+		if n.state == State.DESTROYED:
+			return true
+	return false
+	
 func _ready():
-	if state == State.DISABLED:
+	if state >= State.DISABLED:
 		return
 	parent_physics_body.connect("mouse_entered", self, "_on_StaticBody_mouse_entered")
 	parent_physics_body.connect("mouse_exited", self, "_on_StaticBody_mouse_exited")
@@ -47,20 +76,34 @@ func update_HOVER_color(var is_hover : bool):
 func update_selected():
 	if state >= State.BEING_DESTROYED:
 		return
-	var fade_time : float = 5.0
 	state = State.SELECTED if GlobalVars.SELECTING_MODE else State.BUILT
 	tween.remove(self.mat)
 	tween.remove(self)
+	tween_active = false
 	if state == State.SELECTED:
-		print("Do Tween")
-		tween.interpolate_property(self.mat, "emission",
-			HOVER_SELECT_COLOUR, HOVER_REMOVE_COLOUR, fade_time,
-			Tween.TRANS_CIRC, Tween.EASE_IN)
-		tween.interpolate_callback(self, fade_time, "do_deconstruct_a")
-		tween.start()
+		if any_neighbour_destroyed():
+			do_deconstruct_start(FADE_TIME)
+		else:
+			mat.emission = HOVER_SELECT_COLOUR
 	else:
 		update_HOVER_color(true)
+		
+# Called when one of MY neighbors is destroyed. Check if I was queued for destruction
+func neighbour_fell():
+	if state == State.SELECTED:
+		do_deconstruct_start(FADE_TIME / 5.0)
 
+func do_deconstruct_start(var time : float):
+	if tween_active:
+		return
+	print("Do Tween ", time)
+	tween.interpolate_property(self.mat, "emission",
+		HOVER_SELECT_COLOUR, HOVER_REMOVE_COLOUR, time,
+		Tween.TRANS_CIRC, Tween.EASE_IN)
+	tween.interpolate_callback(self, time, "do_deconstruct_a")
+	tween.start()
+	tween_active = true
+	
 func do_deconstruct_a():
 	print("Remove " + str(id))
 	state = State.BEING_DESTROYED
@@ -91,10 +134,11 @@ func do_deconstruct_b():
 	parent_physics_body.add_child(particles_instance)
 	particles_instance.emitting = true
 
-	
 func done_deconstruct():
 	print("Removed " + str(id))
 	state = State.DESTROYED
+	for n in neighbours:
+		n.neighbour_fell()
 	particles_instance.queue_free()
 	camera_manager.chroma(true)
 
@@ -112,6 +156,3 @@ func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, 
 		if event.is_pressed() and event.button_index == BUTTON_LEFT:
 			GlobalVars.SELECTING_MODE = (state == State.BUILT)
 			update_selected()
-
-func get_state() -> int:
-	return state

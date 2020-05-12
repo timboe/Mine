@@ -7,3 +7,6 @@ smoke_06: Kenny Particle Pack (CC0). https://www.kenney.nl/assets/particle-pack
 Curry script: gau_veldt. https://godotengine.org/qa/6139/currying-component
 
 https://bits.p1x.in/godot-shader-vigdeting-chromatic-aberrations/
+
+TODO
+https://community.khronos.org/t/outline-of-an-object/37339

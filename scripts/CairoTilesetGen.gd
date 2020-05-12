@@ -6,10 +6,9 @@ onready var base_material : SpatialMaterial = preload("res://materials/aluminium
 onready var outline_material : ShaderMaterial = preload("res://materials/grid_edges.tres")
 onready var disabled_material : ShaderMaterial = preload("res://materials/grid_faces.tres")
 
-var rand := RandomNumberGenerator.new()
+onready var cairo = $Cairo
 
-var cairo_mesh : ArrayMesh
-var cairo_mesh_shape := ConvexPolygonShape.new()
+var rand := RandomNumberGenerator.new()
 
 onready var tile_script = preload("res://scripts/TileElement.gd")
 var tileID : int = 0
@@ -17,138 +16,13 @@ var tileID : int = 0
 const TRIPLETS : int = 5
 const BORDER_TRIPLETS : int = 2
 
-# HEIGHT is vertical height (+y) off of the ground plane (x,z)
-# UNIT is the length of the four equal edges of the pentagon
-# SMALL_HYPOT is the length of the small edge (S) of the pentagon
-# Origin is O
-# All internal angles are 90 or 120 deg
-#     T
-#     /\
-#  1 /  \ 1
-#   /    \
-#   |     / R
-# 1 |    / S
-#   |___/ 
-#  O  1
-const HEIGHT : float = 20.0
-const UNIT : float = 10.0
-const SMALL_HYPOT : float = sqrt(3) - 1
-
-# TOP_POINT is the uppermost vertex of the pentagon (T)
-const TOP_POINT_X : float = UNIT * ( 0.5 / tan(deg2rad(30)) )
-const TOP_POINT_Y : float = UNIT * 1.5
-
-# RIGHT_POINT is the rightmost vertex of the pentagon (R)
-const RIGHT_POINT_X : float = UNIT * ( 1.0 + (SMALL_HYPOT * sin(deg2rad(30))) )
-const RIGHT_POINT_Y : float = UNIT * ( SMALL_HYPOT * cos(deg2rad(30)) )
-
-# With UNIT=10 and HEIGHT=20, set to 1 to have textures repete once
-# or 0.5 to not repete
-const UV_SCALE : float = 0.5
-const UV_MAX_HEIGHT = (HEIGHT/UNIT)*UV_SCALE
-
-func add_face(var surface_tool : SurfaceTool, var start : int):
-	surface_tool.add_index(start + 0)
-	surface_tool.add_index(start + 1)
-	surface_tool.add_index(start + 2)
-	#
-	surface_tool.add_index(start + 1)
-	surface_tool.add_index(start + 3)
-	surface_tool.add_index(start + 2)
-	
-func add_face_vertex(var surface_tool : SurfaceTool, var outline_tool : SurfaceTool, var from : Vector3, var to : Vector3):
-	## Add the four points needed to draw the two triangles of a rectangle face
-	surface_tool.add_uv(Vector2(0.0, 0.0));
-	surface_tool.add_vertex(from)
-	#
-	surface_tool.add_uv(Vector2(0.0, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(from.x, HEIGHT, from.z))
-	#
-	surface_tool.add_uv(Vector2(UV_SCALE, 0.0));
-	surface_tool.add_vertex(Vector3(to))
-	#
-	surface_tool.add_uv(Vector2(UV_SCALE, UV_MAX_HEIGHT));
-	surface_tool.add_vertex(Vector3(to.x, HEIGHT, to.z))
-	## Add the three line segments needed to outline the face
-	outline_tool.add_vertex(from)
-	outline_tool.add_vertex(Vector3(from.x, HEIGHT, from.z))
-	#
-	outline_tool.add_vertex(Vector3(from.x, HEIGHT, from.z))
-	outline_tool.add_vertex(Vector3(to.x, HEIGHT, to.z))
-	#
-	outline_tool.add_vertex(from)
-	outline_tool.add_vertex(to)
-	
-func generate_cairo_pentagon() -> ArrayMesh:
-	var surface_tool = SurfaceTool.new()
-	var outline_tool = SurfaceTool.new()
-	surface_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
-	outline_tool.begin(Mesh.PRIMITIVE_LINES)
-	outline_tool.add_color(Color.cyan)
-	###################################
-	# Top face, first triangle
-	# 0
-	surface_tool.add_uv(Vector2(0.0, 0.0));
-	surface_tool.add_vertex(Vector3(0.0, HEIGHT, 0.0))
-	# 1
-	surface_tool.add_uv(Vector2(1.0*UV_SCALE, 0.0));
-	surface_tool.add_vertex(Vector3(UNIT, HEIGHT, 0.0))
-	# 2
-	surface_tool.add_uv(Vector2(0.0, 1.0*UV_SCALE));
-	surface_tool.add_vertex(Vector3(0.0, HEIGHT, UNIT))
-	# 3 Uppermost point, for second trangle
-	surface_tool.add_uv(Vector2((TOP_POINT_Y/UNIT)*UV_SCALE, (TOP_POINT_X/UNIT)*UV_SCALE));
-	surface_tool.add_vertex(Vector3(TOP_POINT_Y, HEIGHT, TOP_POINT_X))
-	# 4 Rightmist point, for third triagle
-	surface_tool.add_uv(Vector2((RIGHT_POINT_Y/UNIT)*UV_SCALE, (RIGHT_POINT_X/UNIT)*UV_SCALE));
-	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, HEIGHT, RIGHT_POINT_X))
-	###################################
-	# First side (rect 1x2), 5-8
-	add_face_vertex(surface_tool, outline_tool, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, UNIT))
-	# Second side (rect sqrt(3)-1x2), 9-12
-	add_face_vertex(surface_tool, outline_tool, Vector3(0.0, 0.0, UNIT), Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X))
-	# Third side (rect 1x2), 13-16
-	add_face_vertex(surface_tool, outline_tool, Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X), Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X))
-	# Fourth side (rect 1x2), 17-20
-	add_face_vertex(surface_tool, outline_tool, Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X), Vector3(UNIT, 0.0, 0))
-	# Fifth side (rect 1x2), 21-24
-	add_face_vertex(surface_tool, outline_tool, Vector3(UNIT, 0.0, 0), Vector3(0.0, 0.0, 0))
-	#####################################################
-	# Top face, three triangles
-	surface_tool.add_index(0)
-	surface_tool.add_index(1)
-	surface_tool.add_index(2) 
-	#
-	surface_tool.add_index(2)
-	surface_tool.add_index(1) 
-	surface_tool.add_index(3)
-	#
-	surface_tool.add_index(2)
-	surface_tool.add_index(3) 
-	surface_tool.add_index(4)
-	# First side (rect 1x2)
-	add_face(surface_tool, 5)
-	# Second side (rect sqrt(3)-1x2)
-	add_face(surface_tool, 9)
-	# Third side (rect 1x2)
-	add_face(surface_tool, 13)
-	# Fourth side (rect 1x2)
-	add_face(surface_tool, 17)
-	# Fifth side (rect 1x2)
-	add_face(surface_tool, 21)
-	#####################################################
-	surface_tool.generate_normals()
-	surface_tool.generate_tangents()
-	var array_mesh = surface_tool.commit()
-	outline_tool.index()
-	outline_tool.commit(array_mesh)
-	return array_mesh
+var one_down = false
 
 func populate(var physics_body_instance : StaticBody):
 	var mesh_instance = MeshInstance.new()
 	mesh_instance.use_in_baked_light = true
 	mesh_instance.set_script(tile_script)
-	mesh_instance.set_mesh(cairo_mesh)
+	mesh_instance.set_mesh(cairo.cairo_mesh)
 	# visible used as flag
 	var mat : Material
 	if physics_body_instance.visible:
@@ -163,14 +37,22 @@ func populate(var physics_body_instance : StaticBody):
 	tileID += 1
 	physics_body_instance.add_child(mesh_instance)
 	var cs = CollisionShape.new()
-	cs.set_shape(cairo_mesh_shape)
+	cs.set_shape(cairo.cairo_mesh_shape)
 	physics_body_instance.add_child(cs)
-
+	var ray := RayCast.new()
+	ray.translate(Vector3(cairo.UNIT/2.0, cairo.HEIGHT/2.0, cairo.UNIT/2.0))
+	ray.cast_to = Vector3(50.0, 0, 0)
+	physics_body_instance.add_child(ray)
+	physics_body_instance.add_to_group("tiles")
+	if !one_down and mat != disabled_material:
+		one_down = true
+		if not Engine.editor_hint: mesh_instance.set_destroyed()
+	
 func check_disabled(var physics_body_instance : StaticBody) -> bool:
 	var t_local : Vector3 = physics_body_instance.translation
 	var t : Vector3 = physics_body_instance.to_global(t_local)
 	var distance_v := Vector2()
-	var max_outer : float = TRIPLETS*3*UNIT*2
+	var max_outer : float = TRIPLETS*3*cairo.UNIT*2
 	if t.z < 0 or t.x < 0:
 		distance_v.x = -min(t.x, t.z)
 	if t.z > max_outer or t.x > max_outer:
@@ -178,23 +60,26 @@ func check_disabled(var physics_body_instance : StaticBody) -> bool:
 	var distance = max(distance_v.x, distance_v.y)
 	if distance > 0:
 		physics_body_instance.visible = false # Used to communicate w below
-		if distance > UNIT*4 and distance > rand.randf_range(0.0, UNIT*8):
+		if distance > cairo.UNIT*4 and distance > rand.randf_range(0.0, cairo.UNIT*8):
 			return true
 	return false
 
 func add_cluster(var xOff : int, var yOff : int):
 	var spatial : Spatial = Spatial.new()
-	var yMod : float = RIGHT_POINT_Y * xOff
-	var xMod : float = RIGHT_POINT_Y * yOff
-	spatial.translate(Vector3(yMod + yOff*(TOP_POINT_X + TOP_POINT_Y), 0, xOff*(UNIT + RIGHT_POINT_X) - xMod))
+	var yMod : float = cairo.RIGHT_POINT_Y * xOff
+	var xMod : float = cairo.RIGHT_POINT_Y * yOff
+	spatial.translate(Vector3(yMod + yOff*(cairo.TOP_POINT_X + cairo.TOP_POINT_Y), 
+		0, xOff*(cairo.UNIT + cairo.RIGHT_POINT_X) - xMod))
 	var physics_body_a := StaticBody.new() # TL
 	var physics_body_b := StaticBody.new() # BL
 	var physics_body_c := StaticBody.new() # BR
 	var physics_body_d := StaticBody.new() # TR
-	physics_body_a.translate(Vector3(UNIT,0,0))
-	physics_body_b.translate(Vector3(UNIT,0,0))
-	physics_body_c.translate(Vector3(UNIT + RIGHT_POINT_Y, 0, UNIT + RIGHT_POINT_X))
-	physics_body_d.translate(Vector3(UNIT + RIGHT_POINT_Y, 0, UNIT + RIGHT_POINT_X))
+	physics_body_a.translate(Vector3(cairo.UNIT,0,0))
+	physics_body_b.translate(Vector3(cairo.UNIT,0,0))
+	physics_body_c.translate(Vector3(cairo.UNIT + cairo.RIGHT_POINT_Y,
+		0, cairo.UNIT + cairo.RIGHT_POINT_X))
+	physics_body_d.translate(Vector3(cairo.UNIT + cairo.RIGHT_POINT_Y,
+		0, cairo.UNIT + cairo.RIGHT_POINT_X))
 	physics_body_b.rotate_y(deg2rad(-90.0))
 	physics_body_c.rotate_y(deg2rad(180.0))
 	physics_body_d.rotate_y(deg2rad(90.0))
@@ -210,8 +95,6 @@ func add_cluster(var xOff : int, var yOff : int):
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	cairo_mesh = generate_cairo_pentagon()
-	cairo_mesh_shape.set_points(cairo_mesh.get_faces())
 	#disabled_material.flags_unshaded = true
 	# Colourful
 	#mat_a.albedo_color = Color(204/255.0, 136/255.0, 204/255.0)
@@ -232,3 +115,25 @@ func _ready():
 			if (y+border < 0 - floor_v.x  ||  y-border > arena - floor_v.x): continue
 			if (x+border < 0 + floor_v.y  ||  x-border > arena + floor_v.y): continue
 			add_cluster(x, y)
+
+func _physics_process(var delta):
+	set_physics_process(false)
+	print("Phys once")
+	if Engine.editor_hint:
+		return
+	for tile in get_tree().get_nodes_in_group("tiles"):
+		#print(tile.get_child_count())
+		var ray : RayCast = tile.get_child(2)
+		for a in range(10):
+			ray.force_raycast_update()
+			var c = ray.get_collider()
+			if c != null and c.get_child(0).has_method("add_neighbour"):
+				c.get_child(0).add_neighbour( tile.get_child(0) )
+				tile.get_child(0).add_neighbour( c.get_child(0) )
+			ray.rotate_object_local(Vector3.UP, 2.0*PI / 10.0)
+		ray.queue_free()
+	# Can put the starting ones down now that we're done ray casting
+	for tile in get_tree().get_nodes_in_group("tiles"):
+		var mesh : MeshInstance = tile.get_child(0)
+		if mesh.get_state() == TileElement.State.DESTROYED:
+			tile.translation.y = -cairo.HEIGHT
