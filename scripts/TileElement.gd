@@ -12,7 +12,7 @@ var neighbours : Array
 
 onready var mat : SpatialMaterial = get_surface_material(0)
 onready var parent_physics_body : StaticBody = get_parent()
-onready var tween : Tween = $"../../../Tween"
+onready var tween : Tween = $"../../../../Tween"
 onready var camera_manager = $"/root/World/CameraManager"
 onready var HEIGHT : float = 20.0
 
@@ -47,9 +47,6 @@ func add_neighbour(var n):
 		neighbours.append(n)
 		
 func any_neighbour_destroyed() -> bool:
-	for n in neighbours:
-		print("neighbour " , n , " state " , n.state)
-	print("---")
 	for n in neighbours:
 		if n.state == State.DESTROYED:
 			return true
@@ -130,7 +127,7 @@ func do_deconstruct_b():
 	tween.interpolate_callback(self, fall_time, "done_deconstruct")
 	tween.interpolate_callback(camera_manager, 0.25, "slow_mo", false)
 	tween.start()
-	particles_instance = $"../../../Particles".duplicate()
+	particles_instance = $"../../../../Particles".duplicate()
 	parent_physics_body.add_child(particles_instance)
 	particles_instance.emitting = true
 
@@ -152,7 +149,7 @@ func _on_StaticBody_mouse_exited():
 	update_HOVER_color(false)
 
 func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, _shape_idx):
-	if event is InputEventMouseButton:
-		if event.is_pressed() and event.button_index == BUTTON_LEFT:
-			GlobalVars.SELECTING_MODE = (state == State.BUILT)
-			update_selected()
+	if event is InputEventMouseButton and event.is_pressed() and event.button_index == BUTTON_LEFT:
+		print(get_id())
+		GlobalVars.SELECTING_MODE = (state == State.BUILT)
+		update_selected()

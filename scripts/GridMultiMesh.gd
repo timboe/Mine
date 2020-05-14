@@ -76,7 +76,7 @@ func _ready():
 		for z in range(-EXTENT/2, EXTENT/2):
 			count += 1
 			assert(count < multimesh.instance_count)
-			if x == 5 and initial_mountain_index == -1:
+			if x == GlobalVars.LEVEL.MOUNTAINS and initial_mountain_index == -1:
 				initial_mountain_index = count
 			multimesh.set_instance_custom_data(count, Color())
 			multimesh.set_instance_transform(count, Transform(Basis(),

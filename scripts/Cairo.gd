@@ -8,7 +8,7 @@ var cairo_mesh_shape := ConvexPolygonShape.new()
 # UNIT is the length of the four equal edges of the pentagon
 # SMALL_HYPOT is the length of the small edge (S) of the pentagon
 # Origin is O
-# All internal angles are 90 or 120 deg
+# All internal angles are 90 or 120 deg (120 deg if touching S)
 #     T
 #     /\
 #  1 /  \ 1
@@ -22,12 +22,12 @@ const UNIT : float = 10.0
 const SMALL_HYPOT : float = sqrt(3) - 1
 
 # TOP_POINT is the uppermost vertex of the pentagon (T)
-const TOP_POINT_X : float = UNIT * ( 0.5 / tan(deg2rad(30)) )
-const TOP_POINT_Y : float = UNIT * 1.5
+const TOP_POINT__RIGHT : float = UNIT * ( 0.5 / tan(deg2rad(30)) )
+const TOP_POINT__UP : float = UNIT * 1.5
 
 # RIGHT_POINT is the rightmost vertex of the pentagon (R)
-const RIGHT_POINT_X : float = UNIT * ( 1.0 + (SMALL_HYPOT * sin(deg2rad(30))) )
-const RIGHT_POINT_Y : float = UNIT * ( SMALL_HYPOT * cos(deg2rad(30)) )
+const RIGHT_POINT__RIGHT : float = UNIT * ( 1.0 + (SMALL_HYPOT * sin(deg2rad(30))) )
+const RIGHT_POINT__UP : float = UNIT * ( SMALL_HYPOT * cos(deg2rad(30)) )
 
 # With UNIT=10 and HEIGHT=20, set to 1 to have textures repete once
 # or 0.5 to not repete
@@ -84,20 +84,20 @@ func generate_cairo_pentagon() -> ArrayMesh:
 	surface_tool.add_uv(Vector2(0.0, 1.0*UV_SCALE));
 	surface_tool.add_vertex(Vector3(0.0, HEIGHT, UNIT))
 	# 3 Uppermost point, for second trangle
-	surface_tool.add_uv(Vector2((TOP_POINT_Y/UNIT)*UV_SCALE, (TOP_POINT_X/UNIT)*UV_SCALE));
-	surface_tool.add_vertex(Vector3(TOP_POINT_Y, HEIGHT, TOP_POINT_X))
+	surface_tool.add_uv(Vector2((TOP_POINT__UP/UNIT)*UV_SCALE, (TOP_POINT__RIGHT/UNIT)*UV_SCALE));
+	surface_tool.add_vertex(Vector3(TOP_POINT__UP, HEIGHT, TOP_POINT__RIGHT))
 	# 4 Rightmist point, for third triagle
-	surface_tool.add_uv(Vector2((RIGHT_POINT_Y/UNIT)*UV_SCALE, (RIGHT_POINT_X/UNIT)*UV_SCALE));
-	surface_tool.add_vertex(Vector3(RIGHT_POINT_Y, HEIGHT, RIGHT_POINT_X))
+	surface_tool.add_uv(Vector2((RIGHT_POINT__UP/UNIT)*UV_SCALE, (RIGHT_POINT__RIGHT/UNIT)*UV_SCALE));
+	surface_tool.add_vertex(Vector3(RIGHT_POINT__UP, HEIGHT, RIGHT_POINT__RIGHT))
 	###################################
 	# First side (rect 1x2), 5-8
 	add_face_vertex(surface_tool, outline_tool, Vector3(0.0, 0.0, 0.0), Vector3(0.0, 0.0, UNIT))
 	# Second side (rect sqrt(3)-1x2), 9-12
-	add_face_vertex(surface_tool, outline_tool, Vector3(0.0, 0.0, UNIT), Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X))
+	add_face_vertex(surface_tool, outline_tool, Vector3(0.0, 0.0, UNIT), Vector3(RIGHT_POINT__UP, 0.0, RIGHT_POINT__RIGHT))
 	# Third side (rect 1x2), 13-16
-	add_face_vertex(surface_tool, outline_tool, Vector3(RIGHT_POINT_Y, 0.0, RIGHT_POINT_X), Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X))
+	add_face_vertex(surface_tool, outline_tool, Vector3(RIGHT_POINT__UP, 0.0, RIGHT_POINT__RIGHT), Vector3(TOP_POINT__UP, 0.0, TOP_POINT__RIGHT))
 	# Fourth side (rect 1x2), 17-20
-	add_face_vertex(surface_tool, outline_tool, Vector3(TOP_POINT_Y, 0.0, TOP_POINT_X), Vector3(UNIT, 0.0, 0))
+	add_face_vertex(surface_tool, outline_tool, Vector3(TOP_POINT__UP, 0.0, TOP_POINT__RIGHT), Vector3(UNIT, 0.0, 0))
 	# Fifth side (rect 1x2), 21-24
 	add_face_vertex(surface_tool, outline_tool, Vector3(UNIT, 0.0, 0), Vector3(0.0, 0.0, 0))
 	#####################################################

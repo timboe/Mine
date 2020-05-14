@@ -1,6 +1,7 @@
 tool
 extends Node
 
+var LEVEL = load("res://levels/skirmish_01.gd")
 
 onready var rand = RandomNumberGenerator.new()
 
