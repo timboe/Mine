@@ -17,7 +17,8 @@ var cairo_mesh_shape := ConvexPolygonShape.new()
 # 1 |    / S
 #   |___/ 
 #  O  1
-const HEIGHT : float = 20.0
+# Extra 1.0 is to extend BELOW the floor
+const HEIGHT : float = GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET
 const UNIT : float = 10.0
 const SMALL_HYPOT : float = sqrt(3) - 1
 

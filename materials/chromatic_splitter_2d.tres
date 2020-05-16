@@ -1,0 +1,34 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=2]
+
+[sub_resource type="Shader" id=1]
+code = "shader_type canvas_item;
+render_mode unshaded;
+
+uniform float offset : hint_range(0, 100);
+uniform float encroach : hint_range(0, 1.0);
+
+void fragment() {
+    vec2 uv = UV;
+    vec4 chroma;
+    float amount = offset * 0.0005;
+	
+    uv *=  1.0 - uv.yx;
+    float vig = uv.x*uv.y * 15.;
+    vig = pow(vig, encroach);
+    vig = 1.0 - vig;
+
+    // cache screen
+    vec3 og_color = texture( TEXTURE, SCREEN_UV, 0.0).rgb;
+
+    // cache screen witch chroma (r/b shifted by amount)
+    chroma.r = og_color.r;
+    chroma.g = texture( TEXTURE, SCREEN_UV + vec2(amount * vig, 0.), 0.0).g;
+    chroma.b = texture( TEXTURE, SCREEN_UV - vec2(amount * vig, 0.), 0.0).b;
+	chroma.a = 1.0;
+    COLOR = chroma;
+}"
+
+[resource]
+shader = SubResource( 1 )
+shader_param/offset = 15.0
+shader_param/encroach = 0.4

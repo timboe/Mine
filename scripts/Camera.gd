@@ -28,7 +28,7 @@ func _input(event):
 	if (event is InputEventMouseButton):
 		var wheel : float = WHEEL_MOD * (Input.get_action_strength("ui_zoom_out") - Input.get_action_strength("ui_zoom_in"))
 		if wheel != 0.0:
-			_wheel_cache = wheel
+			_wheel_cache = round(wheel)
 
 func _poll():
 	_direction.x = Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left")
@@ -37,6 +37,7 @@ func _poll():
 	var zoom : float = Input.get_action_strength("ui_zoom_in") - Input.get_action_strength("ui_zoom_out")
 	if _wheel_cache != 0:
 		zoom += 1 * sign(_wheel_cache)
+# warning-ignore:narrowing_conversion
 		_wheel_cache -= 1 * sign(_wheel_cache)
 	zoom = clamp(zoom, -1, 1)
 	#print("zoom " , zoom , " translation.y " , translation.y)
@@ -74,7 +75,7 @@ func _update_movement(delta):
 	_direction = Vector3()
 
 
-func _update_rotation(delta):
+func _update_rotation(_delta):
 	var offset : Vector2 = _mouse_offset * SENSITIVITY
 	_mouse_offset = Vector2()
 

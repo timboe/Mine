@@ -72,7 +72,9 @@ func _ready():
 	initial_mountain_index = -1
 	multimesh.instance_count = EXTENT*EXTENT
 	var count : int = -1
+# warning-ignore:integer_division
 	for x in range(-EXTENT/2, EXTENT/2):
+# warning-ignore:integer_division
 		for z in range(-EXTENT/2, EXTENT/2):
 			count += 1
 			assert(count < multimesh.instance_count)
@@ -94,7 +96,7 @@ func _ready():
 func generate_mountain() -> Array:
 	var array = []
 	var previous_mountain : float = 0.1
-	for i in range(EXTENT):
+	for _i in range(EXTENT):
 		var custom := Color()
 		custom.r = previous_mountain
 		custom.g = mountain_range(custom.r)

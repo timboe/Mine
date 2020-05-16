@@ -5,7 +5,6 @@ class_name CairoTilesetGen
 onready var base_material : SpatialMaterial = preload("res://materials/aluminium.tres")
 onready var outline_material : ShaderMaterial = preload("res://materials/grid_edges.tres")
 onready var disabled_material : ShaderMaterial = preload("res://materials/grid_faces.tres")
-
 onready var cairo = $Cairo
 onready var tiles : Node = $Tiles
 
@@ -18,22 +17,21 @@ func populate(var physics_body_instance : StaticBody):
 	var mesh_instance = MeshInstance.new()
 	mesh_instance.set_script(tile_script)
 	if not Engine.editor_hint: mesh_instance.set_id(tile_id)
-	if tile_id in GlobalVars.LEVEL.IMMUTABLE:
-		physics_body_instance.visible = false
+	var mat : Material
+	if tile_id in GlobalVars.LEVEL.IMMUTABLE or not physics_body_instance.visible:
+		physics_body_instance.visible = true # Note: was being used as a flag
+		mat = disabled_material
+		if not Engine.editor_hint: mesh_instance.set_disabled()
+	elif tile_id in GlobalVars.LEVEL.INVISIBLE:
+		mesh_instance.visible = false
+		if not Engine.editor_hint: mesh_instance.set_disabled()
+	else:
+		mat = base_material.duplicate()
 	tile_id += 1
 	mesh_instance.use_in_baked_light = true
 	mesh_instance.set_mesh(cairo.cairo_mesh)
-	# visible used as flag
-	var mat : Material
-	if physics_body_instance.visible:
-		mat = base_material.duplicate() 
-	else:
-		mat = disabled_material
-		if not Engine.editor_hint: mesh_instance.set_disabled()
-	physics_body_instance.visible = true # Reset flag
 	mesh_instance.set_surface_material(0, mat)
 	mesh_instance.set_surface_material(1, outline_material)
-
 	physics_body_instance.add_child(mesh_instance)
 	var cs = CollisionShape.new()
 	cs.set_shape(cairo.cairo_mesh_shape)
@@ -70,12 +68,12 @@ func add_cluster(var xOff : int, var yOff : int):
 	var physics_body_b := StaticBody.new() # BL
 	var physics_body_c := StaticBody.new() # BR
 	var physics_body_d := StaticBody.new() # TR
-	physics_body_a.translate(Vector3(cairo.UNIT,0,0))
-	physics_body_b.translate(Vector3(cairo.UNIT,0,0))
+	physics_body_a.translate(Vector3(cairo.UNIT, -GlobalVars.TILE_OFFSET, 0))
+	physics_body_b.translate(Vector3(cairo.UNIT, -GlobalVars.TILE_OFFSET, 0))
 	physics_body_c.translate(Vector3(cairo.UNIT + cairo.RIGHT_POINT__UP,
-		0, cairo.UNIT + cairo.RIGHT_POINT__RIGHT))
+		-GlobalVars.TILE_OFFSET, cairo.UNIT + cairo.RIGHT_POINT__RIGHT))
 	physics_body_d.translate(Vector3(cairo.UNIT + cairo.RIGHT_POINT__UP,
-		0, cairo.UNIT + cairo.RIGHT_POINT__RIGHT))
+		-GlobalVars.TILE_OFFSET, cairo.UNIT + cairo.RIGHT_POINT__RIGHT))
 	physics_body_b.rotate_y(deg2rad(-90.0))
 	physics_body_c.rotate_y(deg2rad(180.0))
 	physics_body_d.rotate_y(deg2rad(90.0))
@@ -108,7 +106,7 @@ func _generate():
 func _ready():
 	_generate()
 
-func _physics_process(var delta):
+func _physics_process(var _delta):
 	set_physics_process(false)
 	print("Phys once")
 	if Engine.editor_hint:
@@ -116,7 +114,7 @@ func _physics_process(var delta):
 	for tile in get_tree().get_nodes_in_group("tiles"):
 		#print(tile.get_child_count())
 		var ray : RayCast = tile.get_child(2)
-		for a in range(10):
+		for _a in range(10):
 			ray.force_raycast_update()
 			var c = ray.get_collider()
 			if c != null and c.get_child(0).has_method("add_neighbour"):
@@ -131,13 +129,13 @@ func _physics_process(var delta):
 			mesh.set_destroyed()
 			tile.translation.y = -cairo.HEIGHT
 		if mesh.get_id() == GlobalVars.LEVEL.MCP_0:
-			var mcp_0 = $MCP.duplicate()
+			var mcp_0 = $"..//Buildings/MCP".duplicate()
 			mcp_0.transform = tile.get_global_transform()
 			add_child(mcp_0)
 			tile.translation.y = -cairo.HEIGHT
 			mesh.set_destroyed()
 		if mesh.get_id() == GlobalVars.LEVEL.MCP_1:
-			var mcp_1 = $MCP.duplicate()
+			var mcp_1 = $"../Buildings/MCP".duplicate()
 			add_child(mcp_1)
 			mcp_1.transform = tile.get_global_transform()
 			tile.translation.y = -cairo.HEIGHT

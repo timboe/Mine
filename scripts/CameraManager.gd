@@ -13,7 +13,6 @@ onready var overhead_camera : Camera = $"../Camera"
 onready var overhead_light : OmniLight = $"../OmniLight"
 onready var tween : Tween = $Tween
 onready var spawn_particles : Particles = $SpawnParticles
-onready var chroma : Mesh = $"../Camera/Chroma".mesh
 
 var quat_from : Quat
 var quat_to : Quat
@@ -36,13 +35,6 @@ export var noise : OpenSimplexNoise
 const RUMBLE_OFFSET : float = 0.75
 const RUMBLE_FALLOFF : float = 100.0
 
-const CHROMA_OFFSET_BASE := 15.0
-const CHROMA_OFFSET_MAX_ADD := 100
-
-const CHROMA_VIN_BASE := 0.4
-const CHROMA_VIN_MAX_ADD := 0.2
-
-var chroma_disable_count : int = 0
 var slow_mo_count : int = 0
 
 var trauma := 0.0
@@ -68,23 +60,6 @@ func _input(event):
 				to_overhead_cam_start()
 	if event.is_action_pressed("toggle_fullscreen"):
 		OS.window_fullscreen = !OS.window_fullscreen
-
-func chroma(var on : bool):
-	if on:
-		chroma_disable_count -= 1
-		if chroma_disable_count == 0:
-			print("Chroma on")
-			$"/root/World/Camera/Chroma".visible = true
-			$"/root/World/Player/Rotation_Helper/Camera/Chroma".visible = true
-			tween.interpolate_property(chroma.surface_get_material(0), 
-				"shader_param/offset", 0.0, 15.0, 1.0, Tween.TRANS_LINEAR, Tween.EASE_OUT)
-			tween.start()
-	else:
-		print("Chroma off")
-		chroma_disable_count += 1
-		$"/root/World/Camera/Chroma".visible = false
-		$"/root/World/Player/Rotation_Helper/Camera/Chroma".visible = false
-		chroma.surface_get_material(0).set_shader_param("offset", 0.0)
 		
 func slow_mo(var on : bool):
 	if on:
@@ -101,7 +76,7 @@ func to_fps_cam_start():
 	if GlobalVars.SELECTED_NODE != null:
 		GlobalVars.SELECTED_NODE.call("_on_StaticBody_mouse_exited")
 	player.transform.origin = overhead_light.to_global(Vector3.ZERO)
-	player.transform.origin.y = 0 if overhead_light.floor_lowered else GlobalVars.FLOOR_HEIGHT
+	player.transform.origin.y = 0.0 if overhead_light.floor_lowered else GlobalVars.FLOOR_HEIGHT
 	player.rotation.y = overhead_camera.rotation.y
 	rot_helper.rotation.x = 0
 	var player_target = player.to_global(Vector3.ZERO)
@@ -122,19 +97,17 @@ func to_fps_cam_start():
 		0.0, 1.0, TRANSITION_TIME, TRANS, Tween.EASE_OUT)
 	tween.interpolate_callback(self, TRANSITION_TIME, "to_fps_cam_end")
 	tween.start()
-	chroma(false)
+
 	
 func to_fps_cam_end():
 	camera_status = CameraStatus.FPS
 	overhead_camera.current = false
 	fps_camera.current = true
 	spawn_particles.emitting = false
-	chroma(true)
 
 func to_overhead_cam_start():
 	camera_status = CameraStatus.TO_OVERHEAD
 	var start : Vector3 = fps_camera.to_global(Vector3.ZERO)
-	var cam_xform = fps_camera.get_global_transform()
 	# Go first to the srart position
 	
 	overhead_camera.transform.origin = start
@@ -175,14 +148,11 @@ func to_overhead_cam_start():
 	tween.start()
 	spawn_particles.transform.origin = player.transform.origin
 	spawn_particles.emitting = true
-	chroma(false)
 
 func to_overhead_cam_end():
 	camera_status = CameraStatus.OVERHEAD
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	spawn_particles.emitting = false
-	# Give a sec for the effect to die off
-	tween.interpolate_callback(self, 1.0, "chroma", true);
 	
 func add_trauma(var amount : float, var from, var add_linger):
 	var c : Vector3 = overhead_camera.to_global(Vector3.ZERO) if overhead_camera.current else fps_camera.to_global(Vector3.ZERO)

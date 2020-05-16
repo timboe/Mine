@@ -13,8 +13,8 @@ var neighbours : Array
 onready var mat : SpatialMaterial = get_surface_material(0)
 onready var parent_physics_body : StaticBody = get_parent()
 onready var tween : Tween = $"../../../../Tween"
-onready var camera_manager = $"/root/World/CameraManager"
-onready var HEIGHT : float = 20.0
+onready var camera_manager = $"../../../../../CameraManager"
+onready var HEIGHT : float = GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET
 
 const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
 const HOVER_COLOUR : Color = Color(0/255.0, 45/255.0, 227/255.0)

@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=2]
+[gd_scene load_steps=17 format=2]
 
 [ext_resource path="res://scenes/CairoTilesetGen.tscn" type="PackedScene" id=1]
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=2]
@@ -7,7 +7,7 @@
 [ext_resource path="res://scenes/Player.tscn" type="PackedScene" id=5]
 [ext_resource path="res://scripts/CameraManager.gd" type="Script" id=6]
 [ext_resource path="res://images/star_05.png" type="Texture" id=7]
-[ext_resource path="res://materials/chromatic_splitter.tres" type="Material" id=8]
+[ext_resource path="res://scenes/Blueprints.tscn" type="PackedScene" id=11]
 
 [sub_resource type="OpenSimplexNoise" id=1]
 
@@ -80,10 +80,6 @@ adjustment_enabled = true
 adjustment_contrast = 2.0
 adjustment_saturation = 2.0
 
-[sub_resource type="PlaneMesh" id=9]
-material = ExtResource( 8 )
-size = Vector2( 3, 3 )
-
 [node name="World" type="Spatial"]
 
 [node name="CameraManager" type="Node" parent="."]
@@ -109,11 +105,6 @@ current = true
 far = 8192.0
 script = ExtResource( 2 )
 
-[node name="Chroma" type="MeshInstance" parent="Camera"]
-transform = Transform( 1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, -1 )
-mesh = SubResource( 9 )
-material/0 = null
-
 [node name="OmniLight" type="OmniLight" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 30, 0 )
 light_color = Color( 0.75, 1, 1, 1 )
@@ -130,3 +121,9 @@ script = ExtResource( 4 )
 
 [node name="Player" parent="." instance=ExtResource( 5 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 0 )
+
+[node name="Blueprints" parent="." instance=ExtResource( 11 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 25, -20 )
+
+[node name="Buildings" parent="." instance=ExtResource( 11 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 25, -20 )

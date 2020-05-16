@@ -1,7 +1,6 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://scripts/Player.gd" type="Script" id=1]
-[ext_resource path="res://materials/chromatic_splitter.tres" type="Material" id=2]
 [ext_resource path="res://materials/grid_edges.tres" type="Material" id=3]
 
 [sub_resource type="CapsuleMesh" id=1]
@@ -16,8 +15,6 @@ size = Vector3( 1.6, 0.2, 1.6 )
 
 [sub_resource type="ConvexPolygonShape" id=4]
 points = PoolVector3Array( -0.8, 0.1, 0.8, 0.8, 0.1, -0.8, 0.8, 0.1, 0.8, -0.8, 0.1, -0.8, -0.8, -0.1, 0.8, 0.8, -0.1, -0.8, 0.8, -0.1, 0.8, -0.8, -0.1, -0.8, 0.8, 0.1, 0.8, -0.8, 0.1, -0.8, 0.8, 0.1, -0.8, -0.8, 0.1, 0.8, 0.8, -0.1, 0.8, -0.8, -0.1, -0.8, 0.8, -0.1, -0.8, -0.8, -0.1, 0.8, 0.8, 0.1, 0.8, -0.8, -0.1, 0.8, -0.8, 0.1, 0.8, 0.8, -0.1, 0.8, 0.8, 0.1, -0.8, -0.8, -0.1, -0.8, -0.8, 0.1, -0.8, 0.8, -0.1, -0.8 )
-
-[sub_resource type="QuadMesh" id=5]
 
 [node name="Player" type="KinematicBody"]
 script = ExtResource( 1 )
@@ -53,10 +50,5 @@ cast_to = Vector3( 0, -250, 0 )
 
 [node name="Camera" type="Camera" parent="Rotation_Helper"]
 far = 8192.0
-
-[node name="Chroma" type="MeshInstance" parent="Rotation_Helper/Camera"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.1 )
-mesh = SubResource( 5 )
-material/0 = ExtResource( 2 )
 
 [node name="Tween" type="Tween" parent="."]

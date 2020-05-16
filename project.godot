@@ -18,10 +18,16 @@ _global_script_classes=[ {
 "class": "TileElement",
 "language": "GDScript",
 "path": "res://scripts/TileElement.gd"
+}, {
+"base": "RayCast",
+"class": "Zapper",
+"language": "GDScript",
+"path": "res://scripts/Zapper.gd"
 } ]
 _global_script_class_icons={
 "CairoTilesetGen": "",
-"TileElement": ""
+"TileElement": "",
+"Zapper": ""
 }
 
 [application]
@@ -33,6 +39,11 @@ config/icon="res://icon.png"
 [autoload]
 
 GlobalVars="*res://scripts/GlobalVars.gd"
+
+[display]
+
+window/stretch/mode="viewport"
+window/stretch/aspect="keep_height"
 
 [input]
 

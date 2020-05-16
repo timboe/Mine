@@ -2,7 +2,7 @@ Aluminium material: Godot Material demo (MIT). https://godotengine.org/asset-lib
 
 Camera script: Copyright 2018-2020 Jaccomo Lorenz (MIT). https://github.com/Maujoe/godot-camera-control
 
-smoke_06: Kenny Particle Pack (CC0). https://www.kenney.nl/assets/particle-pack
+smoke_06, circle_03, star_05: Kenny Particle Pack (CC0). https://www.kenney.nl/assets/particle-pack
 
 Curry script: gau_veldt. https://godotengine.org/qa/6139/currying-component
 
@@ -10,3 +10,6 @@ https://bits.p1x.in/godot-shader-vigdeting-chromatic-aberrations/
 
 TODO
 https://community.khronos.org/t/outline-of-an-object/37339
+
+TEMP
+https://cc0textures.com/view?id=Metal012
