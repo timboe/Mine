@@ -1,4 +1,4 @@
-extends MeshInstance
+extends StaticBody
 
 class_name TileElement
 
@@ -8,12 +8,12 @@ enum State {BUILT, SELECTED, BEING_DESTROYED, DESTROYED, DISABLED}
 var state = State.BUILT 
 var particles_instance : Particles
 
+var paths : Dictionary
 var neighbours : Array
+var mat : SpatialMaterial
+var tween : Tween
+var camera_manager : Node 
 
-onready var mat : SpatialMaterial = get_surface_material(0)
-onready var parent_physics_body : StaticBody = get_parent()
-onready var tween : Tween = $"../../../../Tween"
-onready var camera_manager = $"../../../../../CameraManager"
 onready var HEIGHT : float = GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET
 
 const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
@@ -42,10 +42,17 @@ func set_id(var i: int):
 func get_id():
 	return id
 	
-func add_neighbour(var n):
+func links_to(var target : StaticBody, var mr : StaticBody, var my_child : bool):
+	assert(neighbours.has(target))
+	paths[target] = mr
+	if my_child:
+		add_child(mr)
+		target.links_to(self, mr, false) # Add reciprocal link
+	
+func add_neighbour(var n : StaticBody):
 	if !neighbours.has(n):
 		neighbours.append(n)
-		
+
 func any_neighbour_destroyed() -> bool:
 	for n in neighbours:
 		if n.state == State.DESTROYED:
@@ -53,11 +60,17 @@ func any_neighbour_destroyed() -> bool:
 	return false
 	
 func _ready():
+	pass # See delayed_ready
+	
+func delayed_ready():
 	if state >= State.DISABLED:
 		return
-	parent_physics_body.connect("mouse_entered", self, "_on_StaticBody_mouse_entered")
-	parent_physics_body.connect("mouse_exited", self, "_on_StaticBody_mouse_exited")
-	parent_physics_body.connect("input_event", self, "_on_StaticBody_input_event")
+	connect("mouse_entered", self, "_on_StaticBody_mouse_entered")
+	connect("mouse_exited", self, "_on_StaticBody_mouse_exited")
+	connect("input_event", self, "_on_StaticBody_input_event")
+	tween = $"../../../Tween"
+	camera_manager = $"../../../../CameraManager"
+	mat = get_child(0).get_surface_material(0)
 	mat.emission_energy = 1.0 
 	mat.emission_enabled = false
 
@@ -106,7 +119,7 @@ func do_deconstruct_a():
 	state = State.BEING_DESTROYED
 	var thunk_distance : float = GlobalVars.rand.randf_range(0.05, 0.2)
 	var thunk_time := thunk_distance * 2
-	tween.interpolate_property(parent_physics_body, "translation:y",
+	tween.interpolate_property(self, "translation:y",
 		null, -HEIGHT * thunk_distance, thunk_time,
 		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
 	tween.interpolate_property(self.mat, "emission_energy",
@@ -120,14 +133,14 @@ func do_deconstruct_b():
 	var fall_time : float = GlobalVars.rand.randf_range(4.5, 5.5)
 	camera_manager.slow_mo(true)
 	camera_manager.add_trauma(0.20, to_global(Vector3.ZERO), fall_time)
-	tween.interpolate_property(parent_physics_body, "translation:y",
+	tween.interpolate_property(self, "translation:y",
 		null, -HEIGHT, fall_time,
 		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
 	tween.interpolate_callback(self, fall_time, "done_deconstruct")
 	tween.interpolate_callback(camera_manager, 0.25, "slow_mo", false)
 	tween.start()
-	particles_instance = $"../../../../Particles".duplicate()
-	parent_physics_body.add_child(particles_instance)
+	particles_instance = $"../../../Particles".duplicate()
+	self.add_child(particles_instance)
 	particles_instance.emitting = true
 
 func done_deconstruct():
@@ -150,6 +163,8 @@ func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, 
 	if event is InputEventMouseButton and event.is_pressed() and event.button_index == BUTTON_LEFT:
 		print("Me ", get_id())
 		for n in neighbours:
-			print("N ", n.get_id() , " " , n.state)
+			print(" N ", n.get_id() , " " , n.state)
+		for thePath in paths.keys():
+			print (" Path -> ", thePath.get_id())
 		GlobalVars.SELECTING_MODE = (state == State.BUILT)
 		update_selected()

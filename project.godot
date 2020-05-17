@@ -14,7 +14,7 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://scripts/CairoTilesetGen.gd"
 }, {
-"base": "MeshInstance",
+"base": "StaticBody",
 "class": "TileElement",
 "language": "GDScript",
 "path": "res://scripts/TileElement.gd"
