@@ -14,6 +14,9 @@ var mat : SpatialMaterial
 var tween : Tween
 var camera_manager : Node 
 
+# Set to a vec3 if this tile is participating in the pathing. Note: in global coordinates
+var pathing_centre = null
+
 onready var HEIGHT : float = GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET
 
 const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
@@ -46,7 +49,6 @@ func links_to(var target : StaticBody, var mr : StaticBody, var my_child : bool)
 	assert(neighbours.has(target))
 	paths[target] = mr
 	if my_child:
-		add_child(mr)
 		target.links_to(self, mr, false) # Add reciprocal link
 	
 func add_neighbour(var n : StaticBody):

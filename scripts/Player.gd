@@ -80,8 +80,7 @@ func process_input(delta):
 			if ray.is_colliding():
 				var local = ray_render.get_global_transform().xform_inv( ray.get_collision_point() )
 				draw_jaggy_to(local.y)
-		var collider = ray.get_collider()
-		var wall = collider.get_child(0) if collider != null else null
+		var wall = ray.get_collider()
 		if mouse_initial:
 			mouse_initial = false
 			if wall != null and wall.has_method("get_state"):

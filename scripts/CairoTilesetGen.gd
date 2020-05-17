@@ -4,7 +4,7 @@ class_name CairoTilesetGen
 
 onready var base_material : SpatialMaterial = preload("res://materials/aluminium.tres")
 onready var outline_material : ShaderMaterial = preload("res://materials/grid_edges.tres")
-onready var disabled_material : ShaderMaterial = preload("res://materials/grid_faces.tres")
+onready var disabled_material : ShaderMaterial = preload("res://materials/disabled.tres")
 onready var cairo = $Cairo
 onready var tiles : Node = $Tiles
 onready var monorail = preload("res://scenes/Monorail.tscn")
@@ -24,6 +24,7 @@ func populate(var physics_body_instance : StaticBody, var rotation_group : Strin
 		if not Engine.editor_hint: physics_body_instance.set_disabled()
 		physics_body_instance.add_to_group("disabled")
 	elif tile_id in GlobalVars.LEVEL.INVISIBLE:
+		# Similar to immutable, but seethrough too
 		mesh_instance.visible = false
 		if not Engine.editor_hint: physics_body_instance.set_disabled()
 		physics_body_instance.add_to_group("invisible")
@@ -165,12 +166,14 @@ func add_monorail():
 	# The linking relationships between neighbouring tiles depends on
 	# the transloation and rotations applied during the tesselation.
 	# The four dictionaries below map this for each of the base tiles
+	var monorails : Spatial = $Monorails
+	var pathing_manager : Node = $PathingManager
 	var tile_groups : Array = ["tilesA", "tilesB", "tilesC", "tilesD"]
 	var monorail_groups : Array = ["mr1", "mr2", "mr3"]
 	var tilesA_mapping : Dictionary = {"mr1": 2, "mr2": 3, "mr3": 4}
 	var tilesB_mapping : Dictionary = {"mr1": 1, "mr2": 0, "mr3": 2}
-	var tilesC_mapping : Dictionary = {"mr1": 4, "mr2": 1, "mr3": 2}
-	var tilesD_mapping : Dictionary = {"mr1": 2, "mr2": 3, "mr3": -1}
+	var tilesC_mapping : Dictionary = {"mr1": 4, "mr2": -1, "mr3": 2} # mr2 was 1
+	var tilesD_mapping : Dictionary = {"mr1": 2, "mr2": -1, "mr3": 4} # mr2 was 3
 	var tiles_mapping : Dictionary = {
 		"tilesA": tilesA_mapping, "tilesB": tilesB_mapping,
 		"tilesC": tilesC_mapping, "tilesD": tilesD_mapping}
@@ -180,20 +183,29 @@ func add_monorail():
 			for mg in monorail_groups:
 				# We don't need to make three links from every tile
 				# Some are dupes
-				if mg == -1:
+				var neighbour_id = mapping[mg]
+				if neighbour_id == -1:
 					continue;
-				var target : StaticBody = tile.neighbours[ mapping[mg] ]
+				var target : StaticBody = tile.neighbours[ neighbour_id ]
 				if target.state == TileElement.State.BUILT or target.state == TileElement.State.DESTROYED:
 					var mr = monorail.instance()
 					mr.transform = tile.get_child(0).get_transform()
-					mr.transform.origin.y = cairo.HEIGHT
 					mr.transform.origin += Vector3(cairo.RIGHT_POINT__UP, 0.0, cairo.RIGHT_POINT__UP)
 					if mg == "mr2":
 						mr.rotate_y(deg2rad(60))
 					elif mg == "mr3":
 						mr.rotate_y(deg2rad(120))
 					tile.links_to(target, mr, true)
-			
+					# Move mr into the global coordinate basis, set under floor 
+					mr.transform = tile.get_global_transform() * mr.transform
+					mr.transform.origin.y = 0.0
+					if tile.pathing_centre == null:
+						var pathing_centre = mr.transform.origin
+						pathing_centre.y = 0.0
+						tile.pathing_centre = pathing_centre
+						pathing_manager.astar.add_point( tile.get_id(), tile.pathing_centre )
+					monorails.add_child(mr)
+		
 func disabled_tiles_to_multimesh():
 	var disabled := get_tree().get_nodes_in_group("disabled")
 	var disabled_mm : MultiMeshInstance = $DisabledTiles
