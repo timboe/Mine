@@ -58,7 +58,6 @@ func add_plinth(var mesh_tool : SurfaceTool, var edge_tool : SurfaceTool):
 	helper.add_vertex_alt(mesh_tool, edge_tool, HEIGHT, p4_inner)
 
 func _init():
-	print("create plinth")
 	var edge_tool = SurfaceTool.new()
 	var mesh_tool = SurfaceTool.new()
 	edge_tool.begin(Mesh.PRIMITIVE_LINES)
@@ -73,8 +72,6 @@ func _init():
 		helper.add_faces_edges(mesh_tool, edge_tool, f)
 		
 	# Top is three polygons
-	#for i in range(faces*4, faces*4 + 3*3):
-	#	mesh_tool.add_index(i)
 	
 	mesh_tool.add_index(20)
 	mesh_tool.add_index(21)

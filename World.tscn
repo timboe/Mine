@@ -127,3 +127,6 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 25, -20 )
 
 [node name="Buildings" parent="." instance=ExtResource( 11 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 25, -20 )
+
+[node name="CSGBox" type="CSGBox" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -70, 10, -70 )

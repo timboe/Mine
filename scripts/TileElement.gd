@@ -118,7 +118,6 @@ func do_deconstruct_a():
 func do_deconstruct_b():
 	mat.emission_enabled = false
 	var fall_time : float = GlobalVars.rand.randf_range(4.5, 5.5)
-	camera_manager.chroma(false)
 	camera_manager.slow_mo(true)
 	camera_manager.add_trauma(0.20, to_global(Vector3.ZERO), fall_time)
 	tween.interpolate_property(parent_physics_body, "translation:y",
@@ -137,7 +136,6 @@ func done_deconstruct():
 	for n in neighbours:
 		n.neighbour_fell()
 	particles_instance.queue_free()
-	camera_manager.chroma(true)
 
 func _on_StaticBody_mouse_entered():
 	update_HOVER_color(true)
@@ -150,6 +148,8 @@ func _on_StaticBody_mouse_exited():
 
 func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, _shape_idx):
 	if event is InputEventMouseButton and event.is_pressed() and event.button_index == BUTTON_LEFT:
-		print(get_id())
+		print("Me ", get_id())
+		for n in neighbours:
+			print("N ", n.get_id() , " " , n.state)
 		GlobalVars.SELECTING_MODE = (state == State.BUILT)
 		update_selected()

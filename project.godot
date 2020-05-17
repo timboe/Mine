@@ -40,11 +40,6 @@ config/icon="res://icon.png"
 
 GlobalVars="*res://scripts/GlobalVars.gd"
 
-[display]
-
-window/stretch/mode="viewport"
-window/stretch/aspect="keep_height"
-
 [input]
 
 ui_cancel={
