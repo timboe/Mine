@@ -14,6 +14,16 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://scripts/CairoTilesetGen.gd"
 }, {
+"base": "Spatial",
+"class": "JobManager",
+"language": "GDScript",
+"path": "res://scripts/JobManager.gd"
+}, {
+"base": "StaticBody",
+"class": "Monorail",
+"language": "GDScript",
+"path": "res://scripts/Monorail.gd"
+}, {
 "base": "StaticBody",
 "class": "TileElement",
 "language": "GDScript",
@@ -23,11 +33,19 @@ _global_script_classes=[ {
 "class": "Zapper",
 "language": "GDScript",
 "path": "res://scripts/Zapper.gd"
+}, {
+"base": "Spatial",
+"class": "Zoomba",
+"language": "GDScript",
+"path": "res://scripts/Zoomba.gd"
 } ]
 _global_script_class_icons={
 "CairoTilesetGen": "",
+"JobManager": "",
+"Monorail": "",
 "TileElement": "",
-"Zapper": ""
+"Zapper": "",
+"Zoomba": ""
 }
 
 [application]

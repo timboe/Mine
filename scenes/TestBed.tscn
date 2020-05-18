@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=2]
+[gd_scene load_steps=19 format=2]
 
 [ext_resource path="res://materials/blueprint_spatialmaterial.tres" type="Material" id=1]
 [ext_resource path="res://materials/blueprint_shadermaterial.tres" type="Material" id=2]
@@ -9,9 +9,13 @@
 [ext_resource path="res://materials/beacon_material.tres" type="Material" id=7]
 [ext_resource path="res://materials/stopper_material.tres" type="Material" id=8]
 [ext_resource path="res://materials/glass_eye_spatialmaterial.tres" type="Material" id=9]
-[ext_resource path="res://materials/mcp_material.tres" type="Material" id=10]
+[ext_resource path="res://materials/player0_material.tres" type="Material" id=10]
 [ext_resource path="res://scenes/Monorail.tscn" type="PackedScene" id=11]
 [ext_resource path="res://scenes/Blueprints.tscn" type="PackedScene" id=12]
+[ext_resource path="res://scenes/Zoomba.tscn" type="PackedScene" id=13]
+[ext_resource path="res://materials/player2_material.tres" type="Material" id=14]
+[ext_resource path="res://materials/player1_material.tres" type="Material" id=15]
+[ext_resource path="res://materials/player3_material.tres" type="Material" id=16]
 
 [sub_resource type="CapsuleMesh" id=1]
 radius = 3.0
@@ -61,6 +65,21 @@ material/0 = ExtResource( 7 )
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, 10 )
 mesh = SubResource( 1 )
 material/0 = ExtResource( 10 )
+
+[node name="MeshInstance10" type="MeshInstance" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, 10 )
+mesh = SubResource( 1 )
+material/0 = ExtResource( 15 )
+
+[node name="MeshInstance11" type="MeshInstance" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 0, 0 )
+mesh = SubResource( 1 )
+material/0 = ExtResource( 14 )
+
+[node name="MeshInstance12" type="MeshInstance" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -29.9913, 0.0105934, -11.0313 )
+mesh = SubResource( 1 )
+material/0 = ExtResource( 16 )
 
 [node name="MeshInstance6" type="MeshInstance" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 0, 0 )
@@ -112,6 +131,21 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -15.2799, 0, -10 )
 light_color = Color( 0.6952, 0.78526, 0.79, 1 )
 omni_range = 14.0
 
+[node name="OmniLight9" type="OmniLight" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -25.2799, 0, -10 )
+light_color = Color( 0.6952, 0.78526, 0.79, 1 )
+omni_range = 14.0
+
+[node name="OmniLight10" type="OmniLight" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -25.2799, 0, 0 )
+light_color = Color( 0.6952, 0.78526, 0.79, 1 )
+omni_range = 14.0
+
+[node name="OmniLight11" type="OmniLight" parent="."]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -25.2799, 0, 10 )
+light_color = Color( 0.6952, 0.78526, 0.79, 1 )
+omni_range = 14.0
+
 [node name="OmniLight7" type="OmniLight" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -5.27992, 0, -10 )
 light_color = Color( 0.6952, 0.78526, 0.79, 1 )
@@ -142,3 +176,6 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 0, 40 )
 
 [node name="Monoraill" parent="." instance=ExtResource( 11 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 30 )
+
+[node name="Spatial" parent="." instance=ExtResource( 13 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -15, 0, 30 )

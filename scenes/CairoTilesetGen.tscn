@@ -83,6 +83,10 @@ script = ExtResource( 4 )
 
 [node name="Tiles" type="Spatial" parent="."]
 
+[node name="Buildings" type="Spatial" parent="."]
+
+[node name="Actors" type="Spatial" parent="."]
+
 [node name="Monorails" type="Spatial" parent="."]
 
 [node name="DisabledTiles" type="MultiMeshInstance" parent="."]
@@ -168,7 +172,6 @@ material/0 = null
 shape = SubResource( 9 )
 
 [node name="Cairo" type="MeshInstance" parent="."]
-visible = false
 mesh = SubResource( 10 )
 material/0 = null
 material/1 = null

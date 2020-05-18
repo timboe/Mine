@@ -6,8 +6,7 @@ const TRIPLETS : int = 5
 const BORDER_TRIPLETS : int = 2
 const MOUNTAINS : int = 5
 
-const MCP_0 : int = 173
-const MCP_1 : int = 892
+const MCP : Array = [173, 892]
 
 const DESTROYED : Array = [
 	109, 108, 174, 893, 953, 954, 

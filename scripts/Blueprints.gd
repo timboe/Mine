@@ -4,9 +4,8 @@ extends Spatial
 onready var blueprint : ShaderMaterial = preload("res://materials/blueprint_shadermaterial.tres")
 
 func _ready():
-	if get_name() != "Blueprints":
-		return
-	recursive_set_blueprint(self)
+	if get_name() == "Blueprints":
+		recursive_set_blueprint(self)
 
 func recursive_set_blueprint(var node):
 	for c in range(node.get_child_count()):

@@ -9,6 +9,8 @@ onready var cairo = $Cairo
 onready var tiles : Node = $Tiles
 onready var monorail = preload("res://scenes/Monorail.tscn")
 
+var tile_dictionary : Dictionary
+
 var rand := RandomNumberGenerator.new()
 
 onready var tile_script = preload("res://scripts/TileElement.gd")
@@ -17,6 +19,7 @@ var tile_id : int = 0
 func populate(var physics_body_instance : StaticBody, var rotation_group : String):
 	var mesh_instance = MeshInstance.new()
 	if not Engine.editor_hint: physics_body_instance.set_id(tile_id)
+	tile_dictionary[tile_id] = physics_body_instance
 	var mat : Material
 	if tile_id in GlobalVars.LEVEL.IMMUTABLE or not physics_body_instance.visible:
 		physics_body_instance.visible = true # Note: was being used as a flag
@@ -99,6 +102,7 @@ func add_cluster(var xOff : int, var yOff : int):
 
 func _generate():
 	tile_id = 0
+	tile_dictionary.clear()
 	rand.set_seed(GlobalVars.LEVEL.SEED)
 	for i in range(0, tiles.get_child_count()):
 		tiles.get_child(i).queue_free()
@@ -125,6 +129,7 @@ func _physics_process(var _delta):
 	disabled_tiles_to_multimesh() # Broken
 	apply_loaded_level()
 	add_monorail()
+	apply_initial_monorail_and_zoomba()
 
 func set_neighbours():
 	for tile in get_tree().get_nodes_in_group("tiles"):
@@ -142,38 +147,30 @@ func set_neighbours():
 
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
-		if tile.get_id() in GlobalVars.LEVEL.DESTROYED:
-			tile.set_destroyed()
-			tile.translation.y = -cairo.HEIGHT
-		#
-		if tile.get_id() == GlobalVars.LEVEL.MCP_0:
-			var mcp_0 = $"../Buildings/MCP".duplicate()
-			mcp_0.transform = tile.get_global_transform()
-			mcp_0.transform.origin.y = 0
-			add_child(mcp_0)
+		if tile.get_id() in GlobalVars.LEVEL.MCP:
+			var mcp = $"../ObjectFactory/MCP".duplicate()
+			mcp.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
+			mcp.transform = tile.get_global_transform()
+			mcp.transform.origin.y = 0
+			tile.building = mcp
+			$Buildings.add_child(mcp)
 			tile.translation.y = -cairo.HEIGHT
 			tile.set_destroyed()
-		elif tile.get_id() == GlobalVars.LEVEL.MCP_1:
-			var mcp_1 = $"../Buildings/MCP".duplicate()
-			add_child(mcp_1)
-			mcp_1.transform = tile.get_global_transform()
-			mcp_1.transform.origin.y = 0
-			tile.translation.y = -cairo.HEIGHT
+		elif tile.get_id() in GlobalVars.LEVEL.DESTROYED:
 			tile.set_destroyed()
-
+			tile.translation.y = -cairo.HEIGHT
+		
 func add_monorail():
 	# Our grid is formed of a tesselation of a four-tile primitive.
 	# The linking relationships between neighbouring tiles depends on
 	# the transloation and rotations applied during the tesselation.
 	# The four dictionaries below map this for each of the base tiles
-	var monorails : Spatial = $Monorails
-	var pathing_manager : Node = $PathingManager
 	var tile_groups : Array = ["tilesA", "tilesB", "tilesC", "tilesD"]
 	var monorail_groups : Array = ["mr1", "mr2", "mr3"]
 	var tilesA_mapping : Dictionary = {"mr1": 2, "mr2": 3, "mr3": 4}
 	var tilesB_mapping : Dictionary = {"mr1": 1, "mr2": 0, "mr3": 2}
-	var tilesC_mapping : Dictionary = {"mr1": 4, "mr2": -1, "mr3": 2} # mr2 was 1
-	var tilesD_mapping : Dictionary = {"mr1": 2, "mr2": -1, "mr3": 4} # mr2 was 3
+	var tilesC_mapping : Dictionary = {"mr1": 4, "mr2": -1, "mr3": 2} # mr2 was 1 (dupe)
+	var tilesD_mapping : Dictionary = {"mr1": 2, "mr2": -1, "mr3": 4} # mr2 was 3 (dupe)
 	var tiles_mapping : Dictionary = {
 		"tilesA": tilesA_mapping, "tilesB": tilesB_mapping,
 		"tilesC": tilesC_mapping, "tilesD": tilesD_mapping}
@@ -182,7 +179,7 @@ func add_monorail():
 			var mapping = tiles_mapping[tg]
 			for mg in monorail_groups:
 				# We don't need to make three links from every tile
-				# Some are dupes
+				# Some are dupes. These are given -1 above
 				var neighbour_id = mapping[mg]
 				if neighbour_id == -1:
 					continue;
@@ -198,14 +195,32 @@ func add_monorail():
 					tile.links_to(target, mr, true)
 					# Move mr into the global coordinate basis, set under floor 
 					mr.transform = tile.get_global_transform() * mr.transform
-					mr.transform.origin.y = 0.0
+					mr.transform.origin.y = -0.5 # Hide
 					if tile.pathing_centre == null:
 						var pathing_centre = mr.transform.origin
 						pathing_centre.y = 0.0
 						tile.pathing_centre = pathing_centre
-						pathing_manager.astar.add_point( tile.get_id(), tile.pathing_centre )
-					monorails.add_child(mr)
-		
+						$PathingManager.add_tile(tile)
+					$Monorails.add_child(mr)
+
+func apply_initial_monorail_and_zoomba():
+	for id in GlobalVars.LEVEL.MCP:
+		var player = GlobalVars.LEVEL.MCP.find( id )
+		var tile : TileElement = tile_dictionary[id] # Get ID of MCP tile
+		var done := false
+		for n in tile.neighbours:
+			if n.state == TileElement.State.DESTROYED: # Find a vaid initial link
+				done = true
+				var zoomba = $"../ObjectFactory/Zoomba".duplicate()
+				zoomba.initialise(n, player)
+				$Actors.add_child(zoomba)
+				var mr : Monorail = tile.paths[n]
+				mr.set_constructed(zoomba, true)
+				break
+		if not done:
+			print("Could not connect MCP to starting tile!")
+			assert(false)
+
 func disabled_tiles_to_multimesh():
 	var disabled := get_tree().get_nodes_in_group("disabled")
 	var disabled_mm : MultiMeshInstance = $DisabledTiles
