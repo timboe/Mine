@@ -21,9 +21,12 @@ func add_job(var player : int, var type : int, var place, var target, var what :
 	for job in job_dict.values():
 		if job["type"] != type:
 			continue
-		if (job["place"] == place and job["target"] == target) or (job["place"] == target and job["target"] == place):
-			have_job = true
-			break
+		if job["place"] != place:
+			continue
+		if job["target"] != target:
+			continue
+		have_job = true
+		break
 	if have_job:
 		return # Already on the books
 	#
@@ -55,6 +58,7 @@ func try_and_assign(var zoomba, var job_dict : Dictionary) -> bool:
 	if closest_job != null:
 		closest_job["assigned"] = zoomba
 		zoomba.assign(closest_job)
+		#print("Job " , closest_job["id"], " assigned")
 		return true
 	return false
 

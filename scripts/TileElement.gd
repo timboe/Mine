@@ -41,6 +41,10 @@ const FADE_TIME : float = 5.0
 # Only have one countdown timer
 var tween_active := false
 
+func set_building(var b):
+	building = b
+	b.location = self
+
 func set_disabled():
 	state = State.DISABLED
 	

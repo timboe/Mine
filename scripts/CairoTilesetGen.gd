@@ -152,7 +152,7 @@ func apply_loaded_level():
 			mcp.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
 			mcp.transform = tile.get_global_transform()
 			mcp.transform.origin.y = 0
-			tile.building = mcp
+			tile.set_building(mcp)
 			$Buildings.add_child(mcp)
 			tile.translation.y = -cairo.HEIGHT
 			tile.set_destroyed()
@@ -207,15 +207,17 @@ func apply_initial_monorail_and_zoomba():
 	for id in GlobalVars.LEVEL.MCP:
 		var player = GlobalVars.LEVEL.MCP.find( id )
 		var tile : TileElement = tile_dictionary[id] # Get ID of MCP tile
+		tile.building.update_monorail(true)
 		var done := false
 		for n in tile.neighbours:
 			if n.state == TileElement.State.DESTROYED: # Find a vaid initial link
 				done = true
 				var zoomba = $"../ObjectFactory/Zoomba".duplicate()
-				zoomba.initialise(n, player)
-				$Actors.add_child(zoomba)
+				zoomba.initialise(n, player) # Sets zoomba owner
 				var mr : Monorail = tile.paths[n]
-				mr.set_constructed(zoomba, true)
+				mr.set_constructed(zoomba, true) # Sets as constucted by player
+				$Actors.add_child(zoomba)
+				zoomba.idle_callback()
 				break
 		if not done:
 			print("Could not connect MCP to starting tile!")

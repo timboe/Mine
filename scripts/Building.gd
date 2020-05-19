@@ -2,6 +2,7 @@ tool
 extends StaticBody
 
 var player : int
+var location : TileElement
 
 var default_mat = preload("res://materials/player0_material.tres")
 var updated_mat
@@ -25,6 +26,18 @@ func _process(delta):
 	for tr in to_rotate:
 		tr.rotate_object_local(Vector3.UP, delta * A_VELOCITY)
 
+func update_monorail(var is_built : bool):
+	for mr in location.paths.values():
+		if not is_built:
+			mr.set_passable_for_all( Monorail.Pathing.BIDIRECTIONAL )
+		else:
+			# Only allow to LEAVE the building
+			if location == mr.tile_owner:
+				mr.set_passable_for_all( Monorail.Pathing.OWNER_TO_TARGET )
+			else:
+				assert(location == mr.tile_target)
+				mr.set_passable_for_all( Monorail.Pathing.TARGET_TO_OWNER )
+	
 
 func recursive_set_livery(var node):
 	for c in range(node.get_child_count()):

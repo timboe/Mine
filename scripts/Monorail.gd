@@ -47,6 +47,32 @@ func set_constructed(var by_whome, var instant : bool):
 	if not instant:
 		by_whome.job_finished()
 
+
+func set_passable_for_all(var passable_state):
+	for p in range(GlobalVars.MAX_PLAYERS):
+		pathing[p] = passable_state
+	update_pathing()
+
+func set_passable(var player : int, var passable_state):
+	pathing[player] = passable_state
+	update_pathing()
+
+func get_passable(var player : int, var from : TileElement, var to : TileElement):
+	if (state != State.CONSTRUCTED):
+		return false
+	assert(from == tile_owner or from == tile_target)
+	assert(to == tile_owner or to == tile_target)
+	assert(from != to)
+	match pathing[player]:
+		Pathing.BIDIRECTIONAL:
+			return true
+		Pathing.NONE:
+			return false
+		Pathing.OWNER_TO_TARGET:
+			return true if from == tile_owner and to == tile_target else false
+		Pathing.TARGET_TO_OWNER:
+			return true if from == tile_target and to == tile_owner else false
+
 func update_pathing():
 	if state != State.CONSTRUCTED:
 		return
