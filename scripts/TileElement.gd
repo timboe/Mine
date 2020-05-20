@@ -16,6 +16,7 @@ var camera_manager : Node
 var job_manager : Node 
 var player : int # Who owns this floor
 var building # What is built here
+var claim_strength : int = 0
 
 var monorail_script_resource = load("res://scripts/Monorail.gd")
 
@@ -35,6 +36,8 @@ const OWNED_COLOUR : Array = [
 	Color(1, 1, 0),
 	Color(0, 1, 0),
 ]
+
+const CAPTURE_TIME = 1.5
 
 const FADE_TIME : float = 5.0
 
@@ -129,45 +132,56 @@ func assign_monorail_jobs_on_demolish():
 	# Check for monorail construction tasks
 	# Call if I was just destroyed, and there is an owned tile next door
 	# Here the owner of the neighbouring tile(s) sets who the jobs go to
-	for n in neighbours:
+	for n in paths.keys():
 		if n.state != State.DESTROYED:
 			continue # No - can only connect to destroyed tiles
 		if n.player == -1:
 			continue # No - can't setup jobs from unowned tiles to unowned tiles
-		job_manager.add_job(n.player, job_manager.JobType.CONSTRUCT_MONORAIL, n, self, "ExtendOntoDemolished")
+		job_manager.add_job(n.player, job_manager.JobType.CONSTRUCT_MONORAIL, n, self)
 			
 func try_and_spread_monorail():
 	# Check for monorail construction tasks
 	# Call if a piece of monorail was just finished to/from me
 	# Here my owner determins who the jobs go to
-	for n in neighbours:
+	# Also fires jobs to claim other tiles
+	if building != null:
+		return
+	for n in paths.keys():
 		if n.state != State.DESTROYED:
 			continue # No - can only connect to destroyed tiles
-		if building != null:
-			continue # No - cannot come here to build if there is already a building on this tile
+		var mr = paths[n]
+		if mr.state == monorail_script_resource.State.INITIAL:
+			# Spread 
+			job_manager.add_job(player, job_manager.JobType.CONSTRUCT_MONORAIL, self, n)
+			
+func try_and_spread_capture():
+	if building != null:
+		return
+	for n in paths.keys():
+		if n.state != State.DESTROYED:
+			continue # No - can only connect to destroyed tiles
 		var mr = paths[n]
 		if mr.state == monorail_script_resource.State.CONSTRUCTED:
-			continue # No - this link alreadt exists (might be the one we juuust built)
-		job_manager.add_job(player, job_manager.JobType.CONSTRUCT_MONORAIL, self, n, "SpreadMonorail")
-		
+			# Attack Check
+			if player != -1 and n.player != -1 and player != n.player:
+				job_manager.add_job(player, job_manager.JobType.CLAIM_TILE, n, null)
+
 func update_owner_emission():
 	if player == -1:
 		mat.emission_enabled = false
 		return
-	var new_e : float = 0.02 
+	claim_strength = 1
 	mat.emission_enabled = true
 	mat.emission = OWNED_COLOUR[player]
-	for n in neighbours:
+	for n in paths.keys():
 		if n.player == player:
-			new_e += 0.02
-	tween.remove(self.mat)
-	tween.interpolate_property(self.mat, "emission_energy", null, new_e, 1.0)
+			claim_strength += 1
+	tween.interpolate_property(self.mat, "emission_energy", null, claim_strength * 0.02, 0.5)
 	tween.start()
 
 func do_deconstruct_start(var time : float):
 	if tween_active:
 		return
-	print("Do Tween ", time)
 	tween.interpolate_property(self.mat, "emission",
 		HOVER_SELECT_COLOUR, HOVER_REMOVE_COLOUR, time,
 		Tween.TRANS_CIRC, Tween.EASE_IN)
@@ -176,7 +190,6 @@ func do_deconstruct_start(var time : float):
 	tween_active = true
 	
 func do_deconstruct_a():
-	print("Remove " + str(id))
 	state = State.BEING_DESTROYED
 	var thunk_distance : float = GlobalVars.rand.randf_range(0.05, 0.2)
 	var thunk_time := thunk_distance * 2
@@ -205,7 +218,6 @@ func do_deconstruct_b():
 	particles_instance.emitting = true
 
 func done_deconstruct():
-	print("Removed " + str(id))
 	state = State.DESTROYED
 	for n in neighbours:
 		n.a_neighbour_just_fell()
@@ -220,6 +232,23 @@ func _on_StaticBody_mouse_entered():
 
 func _on_StaticBody_mouse_exited():
 	update_HOVER_color(false)
+	
+func start_capture(var by_whome):
+	var time := CAPTURE_TIME * claim_strength
+	tween.remove(self.mat)
+	tween.interpolate_property(self.mat, "emission", null, OWNED_COLOUR[by_whome.player], time)
+	tween.interpolate_property(by_whome, "rotation:y", null, by_whome.rotation.y+(4.0*PI*time), time)
+	tween.interpolate_callback(self, time, "set_captured", by_whome)
+	tween.start()
+	
+func set_captured(var by_whome):
+	player = by_whome.player
+	update_owner_emission()
+	try_and_spread_capture()
+	for n in paths.keys(): # Give the enemy jobs to reclaim
+		n.update_owner_emission()
+		n.try_and_spread_capture()
+	by_whome.job_finished()
 
 func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, _shape_idx):
 	if event is InputEventMouseButton and event.is_pressed() and event.button_index == BUTTON_LEFT:

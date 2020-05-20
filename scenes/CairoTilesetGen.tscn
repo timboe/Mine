@@ -92,7 +92,7 @@ script = ExtResource( 4 )
 [node name="DisabledTiles" type="MultiMeshInstance" parent="."]
 
 [node name="Particles" type="Particles" parent="."]
-transform = Transform( 1, 0, 0, 0, -1, 8.74228e-08, 0, -8.74228e-08, -1, 6, 21, 6 )
+transform = Transform( 1, 0, 0, 0, -1, 8.74228e-08, 0, -8.74228e-08, -1, 6, 22, 6 )
 emitting = false
 amount = 128
 lifetime = 0.5
@@ -172,6 +172,7 @@ material/0 = null
 shape = SubResource( 9 )
 
 [node name="Cairo" type="MeshInstance" parent="."]
+visible = false
 mesh = SubResource( 10 )
 material/0 = null
 material/1 = null

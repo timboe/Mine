@@ -2,7 +2,10 @@ extends Spatial
 
 class_name JobManager
 
-enum JobType {CONSTRUCT_MONORAIL, CONSTRUCT_BUILDING, REINFORCE}
+const DELAY_PER_ABANDON = 10.0
+const DELAY_MAX = 60.0
+
+enum JobType {CONSTRUCT_MONORAIL, CONSTRUCT_BUILDING, REINFORCE, CLAIM_TILE}
 
 var player_jobs : Array
 var unassigned_count : Array
@@ -13,7 +16,7 @@ func _ready():
 		player_jobs.push_back( {} ) 
 		unassigned_count.push_back( 0 )
 
-func add_job(var player : int, var type : int, var place, var target, var what : String):
+func add_job(var player : int, var type : int, var place, var target):
 	assert(player >= 0 and player < GlobalVars.MAX_PLAYERS)
 	var job : Dictionary
 	var have_job := false
@@ -33,7 +36,7 @@ func add_job(var player : int, var type : int, var place, var target, var what :
 	job_id += 1
 	job = {"id": job_id, "player": player, "type": type, 
 		"place": place, "target": target, "assigned": null,
-		"what": what}
+		"abandoned_by": null, "abandoned_n": 0, "abandoned_timer": 0.0}
 	unassigned_count[player] += 1
 	job_dict[job_id] = job
 	print("New job ", job)
@@ -42,17 +45,27 @@ func remove_job(var player : int, var id_to_remove : int):
 	var job_dict = player_jobs[player]
 	assert(job_dict.has(id_to_remove))
 	job_dict.erase(id_to_remove)
-
+	
+func abandon_job(var player : int, var id_to_remove : int):
+	var job_dict = player_jobs[player]
+	assert(job_dict.has(id_to_remove))
+	var job = job_dict[id_to_remove]
+	unassigned_count[player] += 1
+	job["abandoned_by"] = job["assigned"]
+	job["assigned"] = null
+	job["abandoned_n"] += 1
+	job["abandoned_timer"] = min(DELAY_MAX, job["abandoned_n"] * DELAY_PER_ABANDON)
+	
 func try_and_assign(var zoomba, var job_dict : Dictionary) -> bool:
 	var closest_job = null
 	var zoomba_loc : Vector3 = zoomba.location.pathing_centre
 	for job in job_dict.values():
 		if job["assigned"] != null:
 			continue # Already have a job
+		if job["abandoned_timer"] > 0.0:
+			continue # Don't reassign this one yet
 		var job_loc = job["place"].pathing_centre
 		var clostest_job_loc = closest_job["place"].pathing_centre if closest_job != null else null
-#		if (job["place"].pathing_centre == null or (closest_job != null and closest_job["place"].pathing_centre == null) or zoomba_location == null):
-#				print("STRANGE CRASH DEBUG ", job["place"].pathing_centre, " ", closest_job["place"].pathing_centre, " ", zoomba_location)
 		if closest_job == null or job_loc.distance_to( zoomba_loc ) < clostest_job_loc.distance_to( zoomba_loc ):
 			closest_job = job
 	if closest_job != null:
@@ -67,6 +80,8 @@ func _on_AssignJobs_timeout():
 		if unassigned_count[ player ] == 0:
 			continue # No outstanding
 		var job_dict : Dictionary = player_jobs[player]
+		for job in job_dict.values():
+			job["abandoned_timer"] -= $AssignJobs.wait_time
 		for zoomba in get_tree().get_nodes_in_group("zoombas"):
 			if zoomba.job != null:
 				continue # Zoomba already has a job

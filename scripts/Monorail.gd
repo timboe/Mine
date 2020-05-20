@@ -43,6 +43,9 @@ func set_constructed(var by_whome, var instant : bool):
 	# Can we connect these out further?
 	tile_owner.try_and_spread_monorail()
 	tile_target.try_and_spread_monorail()
+	# Or start a fight?
+	tile_owner.try_and_spread_capture()
+	tile_target.try_and_spread_capture()
 	transform.origin.y = 0
 	if not instant:
 		by_whome.job_finished()

@@ -196,12 +196,15 @@ func add_monorail():
 					# Move mr into the global coordinate basis, set under floor 
 					mr.transform = tile.get_global_transform() * mr.transform
 					mr.transform.origin.y = -0.5 # Hide
-					if tile.pathing_centre == null:
-						var pathing_centre = mr.transform.origin
-						pathing_centre.y = 0.0
-						tile.pathing_centre = pathing_centre
-						$PathingManager.add_tile(tile)
 					$Monorails.add_child(mr)
+		for tile in get_tree().get_nodes_in_group("interactive"):
+			# TODO - this duplicates a fair bit of the above ^
+			var t = tile.get_child(0).get_transform()
+			t.origin += Vector3(cairo.RIGHT_POINT__UP, 0.0, cairo.RIGHT_POINT__UP)
+			t = tile.get_global_transform() * t
+			t.origin.y = 0 # Hide
+			tile.pathing_centre = t.origin
+			$PathingManager.add_tile(tile)
 
 func apply_initial_monorail_and_zoomba():
 	for id in GlobalVars.LEVEL.MCP:
