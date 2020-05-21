@@ -52,6 +52,9 @@ func quat_transform(var amount : float):
 	overhead_camera.transform.basis = Basis(mid)
 
 func _input(event):
+	if event.is_action_pressed("scram"): # Temp - delete this
+		for zoomba in get_tree().get_nodes_in_group("zoombas"):
+			zoomba.scram()
 	if event.is_action_pressed("capture_toggle"):
 		match camera_status:
 			CameraStatus.OVERHEAD:

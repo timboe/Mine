@@ -25,9 +25,22 @@ func start_construction(var by_whome):
 	assert(state == State.INITIAL)
 	state = State.UNDER_CONSTRUCTION
 	var tween : Tween = $"../../Tween"
+	tween.remove(self)
 	tween.interpolate_property(self, "translation:y", null, 0.0, CONSTRUCT_TIME)
 	tween.interpolate_callback(self, CONSTRUCT_TIME, "set_constructed", by_whome, false)
 	tween.start()
+	
+func abandon_construction():
+	assert(state == State.UNDER_CONSTRUCTION)
+	var tween : Tween = $"../../Tween"
+	tween.remove(self)
+	tween.interpolate_property(self, "translation:y", null, -0.5, CONSTRUCT_TIME)
+	tween.interpolate_callback(self, CONSTRUCT_TIME, "set_initial")
+	tween.start()	
+
+func set_initial():
+	assert(state == State.UNDER_CONSTRUCTION)
+	state = State.INITIAL
 
 func set_constructed(var by_whome, var instant : bool):
 	if not instant:

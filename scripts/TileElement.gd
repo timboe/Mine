@@ -241,6 +241,14 @@ func start_capture(var by_whome):
 	tween.interpolate_callback(self, time, "set_captured", by_whome)
 	tween.start()
 	
+func abandon_capture(var by_whome):
+	var time := CAPTURE_TIME
+	tween.remove(self.mat)
+	tween.remove(by_whome)
+	tween.remove(self)
+	tween.interpolate_property(self.mat, "emission", null, OWNED_COLOUR[player], CAPTURE_TIME)
+	tween.start()
+	
 func set_captured(var by_whome):
 	player = by_whome.player
 	update_owner_emission()

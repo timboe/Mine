@@ -8,6 +8,7 @@ onready var state : int = State.IDLE
 
 const MOVE_TIME := 1.0
 const QUICK_ROTATE_TIME := 0.2
+const SCRAM : int = 10
 
 var job
 var player : int
@@ -15,6 +16,7 @@ var location : TileElement
 var previous_location : TileElement
 var path : PoolIntArray = []
 var progress : int
+var scram_count : int = 0
 
 # Used for rotation
 var quat_from : Quat
@@ -36,6 +38,11 @@ func initialise(var loc : TileElement, var pl : int):
 	var updated_mat = load("res://materials/player" + str(player) + "_material.tres")
 	$Body/CSGBody/CSGMesh.material = updated_mat
 	
+func scram():
+	scram_count = SCRAM
+	if state != State.IDLE:
+		abandon_job()
+		
 func assign(var new_job : Dictionary):
 	assert(job == null)
 	assert(state == State.IDLE)
@@ -44,33 +51,68 @@ func assign(var new_job : Dictionary):
 	job = new_job
 	
 func pathing_callback():
+	# First - check we didn't scram while moving.
+	# If we did then we want to redirect to the idle callback
+	if scram_count > 0:
+		assert(state == State.IDLE)
+		return idle_callback()
+		return
+	# Second check if at destination
 	assert(state == State.PATHING)
 	if location.get_id() == job["place"].get_id():
-		start_work()
+		return start_work()
 		return
-	else:
-		var pm = $"../../PathingManager"
-		if path.size() == 0:
-			path = pm.pathfind(player, location, job["place"])
-			#print("player " , player , " from " , location , " to " , job["place"] , " size " , path.size())
-			if path.size() < 2:
-				# We were unable to path
-				abandon_job()
-				return
-			progress = 1 # 0 is our starting location
-		assert(progress < path.size())
-		location = pm.get_tile( path[progress] )
-		progress += 1
-		move("pathing_callback")
+	# Third, run pathing
+	var pm = $"../../PathingManager"
+	if path.size() == 0:
+		path = pm.pathfind(player, location, job["place"])
+		#print("player " , player , " from " , location , " to " , job["place"] , " size " , path.size())
+		if path.size() < 2:
+			# We were unable to path
+			return abandon_job()
+			return
+		progress = 1 # 0 is our starting location
+	assert(progress < path.size())
+	location = pm.get_tile( path[progress] )
+	progress += 1
+	move("pathing_callback")
 
 func abandon_job():
-	assert(state == State.PATHING)
+	assert(state == State.PATHING or state == State.WORKING)
+	assert(job != null)
+	match state:
+		State.PATHING:
+			return abandon_job_while_pathing()
+		State.WORKING:
+			return abandon_job_while_working()
+		
+func abandon_job_while_pathing():
 	state = State.IDLE
 	var id = job["id"]
 	job = null
-	$"../../../JobManager".abandon_job(player, id)
-	$"../../../JobManager"._on_AssignJobs_timeout()
 	print("ABANDONING JOB ", id)
+	$"../../../JobManager".abandon_job(player, id)
+	# Wait for pathing callback
+	
+func abandon_job_while_working():
+	$Zapper.visible = false
+	match job["type"]:
+		JobManager.JobType.CONSTRUCT_MONORAIL:
+			var mr = job["place"].paths[ job["target"] ]
+			mr.abandon_construction()
+		JobManager.JobType.CLAIM_TILE:
+			var tile = job["place"]
+			tile.abandon_capture(self)
+		_:
+			print("UNKNOWN JOB TYPE")
+			assert(false)
+	state = State.IDLE
+	var id = job["id"]
+	job = null
+	print("ABANDONING JOB ", id)
+	$"../../../JobManager".abandon_job(player, id)
+	# If we abandoned while we were working - then we were waiting for the end-of
+	# job callback which will now never come. Hence we now need to call idle_callback
 	idle_callback()
 	
 func start_work():
@@ -85,16 +127,15 @@ func start_work():
 			var mr = job["place"].paths[ job["target"] ]
 			if mr.state == mr_class.State.INITIAL:
 				mr.start_construction(self)
-			else: # Job was already done (both directions can get queued, or another team might make the claim)
-				print("Monorail construction job was already completed")
+			else: # Job was already done/stared (both directions can get queued, or another team might make the claim)
+				print("Monorail construction job was already handled")
 				job_finished()
 		JobManager.JobType.CLAIM_TILE:
 			$Zapper.cast_to.y = cairo_class.TOP_POINT__RIGHT / 2.0
-
 			var tile = job["place"]
 			if tile.player != player:
 				tile.start_capture(self)
-			else: # Job was already done (both directions can get queued, or another team might make the claim)
+			else: # Job was already done 
 				print("Capture job was already completed")
 				job_finished()
 		_:
@@ -104,12 +145,7 @@ func start_work():
 func quick_rotate():
 	if job["target"] == null:
 		 return
-	quat_from = Quat(transform.basis)
-	var cache_rot = transform.basis
-	look_at(job["target"].pathing_centre, Vector3.UP)
-	rotation.y -= PI/2.0
-	quat_to = Quat(transform.basis)
-	transform.basis = cache_rot
+	setup_rotation(job["target"], null)
 	var tween : Tween = $"../../Tween"
 	tween.interpolate_method(self, "quat_transform", 0.0, 1.0, QUICK_ROTATE_TIME)
 	tween.start()
@@ -122,20 +158,35 @@ func job_finished():
 	var job_id = job["id"]
 	job = null
 	$"../../../JobManager".remove_job(player, job_id)
-	$"../../../JobManager"._on_AssignJobs_timeout()
+	$"../../../JobManager".assign_jobs()
 	idle_callback()
 	
 func idle_callback():
 	if job != null:
+		assert(scram_count == 0)
 		path.resize(0)
 		pathing_callback()
 		return
+		
 	# Get possible ways out of this tile
 	var possible_destinations : Array
 	for to_test in location.paths.keys():
 		var mr = location.paths[to_test]
 		if mr.get_passable(player, location, to_test):
 			possible_destinations.push_back(to_test)
+			
+	# Special consderations if scraming
+	if scram_count > 0:
+		scram_count -= 1
+		var enemy_tiles := []
+		for d in possible_destinations:
+			if d.player != player:
+				enemy_tiles.push_back( d )
+		if possible_destinations.size() - enemy_tiles.size() > 0: # If at lease one way out isn't to enemy land
+			for e in enemy_tiles:
+				var loc = possible_destinations.find( e )
+				possible_destinations.remove( loc )
+			
 	# Avoid backtracking, if possible
 	var backtrack = possible_destinations.find(previous_location)
 	if possible_destinations.size() > 1 and backtrack != -1:
@@ -150,25 +201,34 @@ func idle_callback():
 	# Go to new location. In extreme cases may be the same tile (possible_destinations.size() == 0)
 	move("idle_callback")
 	#print("Zoomba idle ", previous_location.get_id(), " to " , location.get_id(), " possible dests " , possible_destinations.size())
-	
-func move(var callback):
+
+func setup_rotation(var target, var look_at_from_target):
 	quat_from = Quat(transform.basis)
 	var cache_rot = transform.basis
-	if job != null and location == job["place"] and job["target"] != null:
+	if look_at_from_target != null:
 		# If final move, look towards where the job is
 		var cache_origin = transform.origin
-		transform.origin = location.pathing_centre
-		look_at(job["target"].pathing_centre, Vector3.UP)
+		transform.origin = target.pathing_centre
+		look_at(look_at_from_target.pathing_centre, Vector3.UP)
 		transform.origin = cache_origin
 	else:
-		look_at(location.pathing_centre, Vector3.UP)
+		look_at(target.pathing_centre, Vector3.UP)
 	rotation.y -= PI/2.0
 	quat_to = Quat(transform.basis)
 	transform.basis = cache_rot
+
+func move(var callback):
+	setup_rotation(location, null if job == null else job["target"])
 	var tween : Tween = $"../../Tween"
-	tween.interpolate_method(self, "quat_transform", 0.0, 1.0, MOVE_TIME/2.0)
-	tween.interpolate_property(self, "translation", null, location.pathing_centre, MOVE_TIME)
-	tween.interpolate_callback(self, MOVE_TIME, callback)
+	var time = MOVE_TIME 
+	if scram_count > 0:
+		time *=  0.5
+	elif state == State.IDLE:
+		time *= 2.0 
+	# else - pathing, time *= 1.0
+	tween.interpolate_method(self, "quat_transform", 0.0, 1.0,time/2.0)
+	tween.interpolate_property(self, "translation", null, location.pathing_centre, time)
+	tween.interpolate_callback(self, time, callback)
 	tween.start()
 	
 

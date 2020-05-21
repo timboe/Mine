@@ -34,7 +34,7 @@ func add_job(var player : int, var type : int, var place, var target):
 		return # Already on the books
 	#
 	job_id += 1
-	job = {"id": job_id, "player": player, "type": type, 
+	job = {"id": job_id, "player": player, "type": type, "priority": 0,
 		"place": place, "target": target, "assigned": null,
 		"abandoned_by": null, "abandoned_n": 0, "abandoned_timer": 0.0}
 	unassigned_count[player] += 1
@@ -57,37 +57,45 @@ func abandon_job(var player : int, var id_to_remove : int):
 	job["abandoned_timer"] = min(DELAY_MAX, job["abandoned_n"] * DELAY_PER_ABANDON)
 	
 func try_and_assign(var zoomba, var job_dict : Dictionary) -> bool:
-	var closest_job = null
+	var bestest_job = null
 	var zoomba_loc : Vector3 = zoomba.location.pathing_centre
 	for job in job_dict.values():
 		if job["assigned"] != null:
 			continue # Already have a job
 		if job["abandoned_timer"] > 0.0:
 			continue # Don't reassign this one yet
-		var job_loc = job["place"].pathing_centre
-		var clostest_job_loc = closest_job["place"].pathing_centre if closest_job != null else null
-		if closest_job == null or job_loc.distance_to( zoomba_loc ) < clostest_job_loc.distance_to( zoomba_loc ):
-			closest_job = job
-	if closest_job != null:
-		closest_job["assigned"] = zoomba
-		zoomba.assign(closest_job)
-		#print("Job " , closest_job["id"], " assigned")
+		if job["priority"] == -1:
+			continue # We're not doing jobs of this type ATM
+		if bestest_job == null \
+			or job["priority"] < bestest_job["priority"] \
+			or job["place"].pathing_centre.distance_to( zoomba_loc ) \
+				< bestest_job["place"].pathing_centre.distance_to( zoomba_loc ) :
+			bestest_job = job
+	if bestest_job != null:
+		bestest_job["assigned"] = zoomba
+		zoomba.assign(bestest_job)
+		#print("Job " , bestest_job["id"], " assigned")
 		return true
 	return false
+
+func assign_jobs():
+	for player in range(GlobalVars.MAX_PLAYERS):
+		if unassigned_count[ player ] == 0:
+			continue # No outstanding
+		for zoomba in get_tree().get_nodes_in_group("zoombas"):
+			if zoomba.job != null:
+				continue # Zoomba already has a job
+			if zoomba.player != player:
+				continue # Someone else's zoomba
+			if zoomba.scram_count > 0:
+				continue # Zoomba panicking about something
+			if try_and_assign(zoomba, player_jobs[player]):
+				unassigned_count[ player ] -= 1
 
 func _on_AssignJobs_timeout():
 	for player in range(GlobalVars.MAX_PLAYERS):
 		if unassigned_count[ player ] == 0:
 			continue # No outstanding
-		var job_dict : Dictionary = player_jobs[player]
-		for job in job_dict.values():
+		for job in player_jobs[player].values():
 			job["abandoned_timer"] -= $AssignJobs.wait_time
-		for zoomba in get_tree().get_nodes_in_group("zoombas"):
-			if zoomba.job != null:
-				continue # Zoomba already has a job
-			if zoomba.player != player:
-				continue # Zoomba belongs to another player
-			if try_and_assign(zoomba, job_dict):
-				unassigned_count[ player ] -= 1
-			else:
-				 break # no one free
+	assign_jobs()
