@@ -144,6 +144,13 @@ func set_neighbours():
 		if tile.state == TileElement.State.BUILT:
 			assert(tile.neighbours.size() == 5)
 		ray.queue_free()
+	for tile in get_tree().get_nodes_in_group("interactive"):
+		var t = tile.get_child(0).get_transform()
+		t.origin += Vector3(cairo.RIGHT_POINT__UP, 0.0, cairo.RIGHT_POINT__UP)
+		t = tile.get_global_transform() * t
+		t.origin.y = 0
+		tile.pathing_centre = t.origin
+		$PathingManager.add_tile(tile)
 
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
@@ -197,14 +204,7 @@ func add_monorail():
 					mr.transform = tile.get_global_transform() * mr.transform
 					mr.transform.origin.y = -0.5 # Hide
 					$Monorails.add_child(mr)
-		for tile in get_tree().get_nodes_in_group("interactive"):
-			# TODO - this duplicates a fair bit of the above ^
-			var t = tile.get_child(0).get_transform()
-			t.origin += Vector3(cairo.RIGHT_POINT__UP, 0.0, cairo.RIGHT_POINT__UP)
-			t = tile.get_global_transform() * t
-			t.origin.y = 0 # Hide
-			tile.pathing_centre = t.origin
-			$PathingManager.add_tile(tile)
+
 
 func apply_initial_monorail_and_zoomba():
 	for id in GlobalVars.LEVEL.MCP:

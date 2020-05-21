@@ -5,11 +5,12 @@ class_name TileElement
 var id := 0
 
 enum State {BUILT, SELECTED, BEING_DESTROYED, DESTROYED, DISABLED}
-var state = State.BUILT 
+var state = State.BUILT
+var selected_by : Array
 var particles_instance : Particles
 
-var paths : Dictionary # dict of neighbour -> monorail
-var neighbours : Array
+var paths : Dictionary # dict of all pathable neighbours. Key=neighbour, Value=connecting monorail
+var neighbours : Array # Array of all neighbours (including immutible ones)
 var mat : SpatialMaterial
 var tween : Tween
 var camera_manager : Node 
@@ -54,6 +55,12 @@ func set_disabled():
 func set_destroyed():
 	state = State.DESTROYED
 	mat.emission_energy = 0.0
+	var pathing_manager = $"../../../PathingManager"
+	# Note: We don't have access to the paths variable yet
+	# as this is called also during the level setup
+	for n in neighbours:
+		if n.state == State.DESTROYED:
+			pathing_manager.connect_tiles(GlobalVars.MAX_PLAYERS, self, n, true)
 	
 func get_state() -> int:
 	return state
@@ -75,15 +82,30 @@ func add_neighbour(var n : StaticBody):
 	if !neighbours.has(n):
 		neighbours.append(n)
 
-func any_neighbour_destroyed() -> bool:
-	for n in neighbours:
-		if n.state == State.DESTROYED:
+func can_be_destroyed() -> bool:
+	for n in paths.keys():
+		if n.state == State.DESTROYED and n.player != -1 and selected_by[ n.player ]:
+			# My destruction was requested by someone who has a tile right nextdoor
 			return true
+	var pathing_manager = $"../../../PathingManager" 
+	for n in paths.keys():
+		if n.state != State.DESTROYED:
+			continue
+		for p in GlobalVars.MAX_PLAYERS:
+			if selected_by[p]:
+				# Get player's home base tile
+				var myMCP = $"../../../../CairoTilesetGen".tile_dictionary[ GlobalVars.LEVEL.MCP[p] ]
+				if pathing_manager.are_tiles_connected(GlobalVars.MAX_PLAYERS, n, myMCP):
+					# My destriction was requested by someone who has a theoretically navagable
+					# path from a destroyed tile next to me back to their home-base
+					return true 
 	return false
 	
 func _ready():
 	player = -1
 	building = null
+	for _p in GlobalVars.MAX_PLAYERS:
+		selected_by.push_back(false)
 	# See delayed_ready
 	
 func delayed_ready():
@@ -108,15 +130,24 @@ func update_HOVER_color(var is_hover : bool):
 	else:
 		mat.emission_enabled = false
 		
-func update_selected():
+func update_selected(var player):
 	if state >= State.BEING_DESTROYED:
 		return
-	state = State.SELECTED if GlobalVars.SELECTING_MODE else State.BUILT
+	if GlobalVars.SELECTING_MODE:
+		state = State.SELECTED
+		selected_by[player] = true
+	else:
+		selected_by[player] = false
+		var n_selected = 0
+		for p in GlobalVars.MAX_PLAYERS:
+			if selected_by[p]:
+				n_selected += 1
+		state = State.SELECTED if n_selected > 0 else State.BUILT
 	tween.remove(self.mat)
 	tween.remove(self)
 	tween_active = false
 	if state == State.SELECTED:
-		if any_neighbour_destroyed():
+		if can_be_destroyed():
 			do_deconstruct_start(FADE_TIME)
 		else:
 			mat.emission = HOVER_SELECT_COLOUR
@@ -125,7 +156,7 @@ func update_selected():
 		
 # Called when one of MY neighbors is destroyed. Check if I was queued for destruction
 func a_neighbour_just_fell():
-	if state == State.SELECTED:
+	if state == State.SELECTED and can_be_destroyed():
 		do_deconstruct_start(FADE_TIME / 5.0)
 		
 func assign_monorail_jobs_on_demolish():
@@ -218,8 +249,8 @@ func do_deconstruct_b():
 	particles_instance.emitting = true
 
 func done_deconstruct():
-	state = State.DESTROYED
-	for n in neighbours:
+	set_destroyed()
+	for n in paths.keys():
 		n.a_neighbour_just_fell()
 	assign_monorail_jobs_on_demolish()
 	particles_instance.queue_free()
@@ -228,7 +259,7 @@ func _on_StaticBody_mouse_entered():
 	update_HOVER_color(true)
 	GlobalVars.SELECTED_NODE = self
 	if Input.is_mouse_button_pressed(1):
-		update_selected()
+		update_selected(0)
 
 func _on_StaticBody_mouse_exited():
 	update_HOVER_color(false)
@@ -266,4 +297,4 @@ func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, 
 		for thePath in paths.keys():
 			print (" Path -> ", thePath.get_id())
 		GlobalVars.SELECTING_MODE = (state == State.BUILT)
-		update_selected()
+		update_selected(0) # Currently only user who can click things
