@@ -1,4 +1,3 @@
-tool
 extends StaticBody
 
 var player : int
@@ -9,6 +8,9 @@ var updated_mat
 
 var to_rotate : Array
 const A_VELOCITY = 100
+const PULSE_INITIAL := 0.1
+var pulse_n := 0
+var zoomba_start_loc : TileElement
 
 func _ready():
 	if player > 0:
@@ -45,3 +47,20 @@ func recursive_set_livery(var node):
 	var rid = node.get_surface_material(0).get_rid() if node is MeshInstance and node.get_surface_material(0) != null else null
 	if rid != null and rid == default_mat.get_rid():
 		node.set_surface_material(0, updated_mat)
+
+
+func on_PulseTimer_timeout():
+	if location == null:
+		print("loc == null, ",self)
+		return
+	print("pulse ", pulse_n)
+	pulse_n += 1
+	for n in location.paths.keys():
+		n.pulse_start(PULSE_INITIAL, pulse_n)
+		
+func add_zoomba():
+	var zoomba = $"../../../ObjectFactory/Zoomba".duplicate()
+	zoomba.initialise(zoomba_start_loc, player) # Sets zoomba owner
+	$"../../Actors".add_child(zoomba)
+	zoomba.idle_callback()
+	return zoomba

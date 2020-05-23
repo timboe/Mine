@@ -55,6 +55,9 @@ func _input(event):
 	if event.is_action_pressed("scram"): # Temp - delete this
 		for zoomba in get_tree().get_nodes_in_group("zoombas"):
 			zoomba.scram()
+	if event.is_action_pressed("zoomba"): # Temp - delete this
+		for mcp in get_tree().get_nodes_in_group("mcp"):
+			mcp.add_zoomba()
 	if event.is_action_pressed("capture_toggle"):
 		match camera_status:
 			CameraStatus.OVERHEAD:
@@ -189,3 +192,4 @@ func apply_shake(var delta : float):
 	else:
 		overhead_camera.h_offset = offset_x
 		overhead_camera.v_offset = offset_y
+

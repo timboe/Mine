@@ -1,4 +1,3 @@
-tool
 extends Spatial
 class_name CairoTilesetGen
 
@@ -37,13 +36,11 @@ func populate(var physics_body_instance : StaticBody, var rotation_group : Strin
 		physics_body_instance.add_to_group(rotation_group)
 	tile_id += 1
 	mesh_instance.use_in_baked_light = true
-	mesh_instance.set_mesh(cairo.cairo_mesh)
+	mesh_instance.set_mesh(cairo.mesh)
 	mesh_instance.set_surface_material(0, mat)
 	mesh_instance.set_surface_material(1, outline_material)
 	physics_body_instance.add_child(mesh_instance)
-	var cs = CollisionShape.new()
-	cs.set_shape(cairo.cairo_mesh_shape)
-	physics_body_instance.add_child(cs)
+	physics_body_instance.add_child(cairo.get_child(0).duplicate())
 	var ray := RayCast.new()
 	ray.translate(Vector3(cairo.UNIT/2.0, cairo.HEIGHT/2.0, cairo.UNIT/2.0))
 	ray.cast_to = Vector3(50.0, 0, 0)
@@ -155,10 +152,12 @@ func set_neighbours():
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
 		if tile.get_id() in GlobalVars.LEVEL.MCP:
-			var mcp = $"../ObjectFactory/MCP".duplicate()
+			var mcp : StaticBody = $"../ObjectFactory/MCP".duplicate()
+			mcp.location = tile
 			mcp.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
 			mcp.transform = tile.get_global_transform()
 			mcp.transform.origin.y = 0
+			mcp.add_to_group("mcp")
 			tile.set_building(mcp)
 			$Buildings.add_child(mcp)
 			tile.translation.y = -cairo.HEIGHT
@@ -215,12 +214,10 @@ func apply_initial_monorail_and_zoomba():
 		for n in tile.neighbours:
 			if n.state == TileElement.State.DESTROYED: # Find a vaid initial link
 				done = true
-				var zoomba = $"../ObjectFactory/Zoomba".duplicate()
-				zoomba.initialise(n, player) # Sets zoomba owner
+				tile.building.zoomba_start_loc = n
+				var zoomba = tile.building.add_zoomba()
 				var mr : Monorail = tile.paths[n]
 				mr.set_constructed(zoomba, true) # Sets as constucted by player
-				$Actors.add_child(zoomba)
-				zoomba.idle_callback()
 				break
 		if not done:
 			print("Could not connect MCP to starting tile!")

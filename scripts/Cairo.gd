@@ -1,8 +1,9 @@
-tool
 extends MeshInstance
 
 var cairo_mesh : ArrayMesh
 var cairo_mesh_shape := ConvexPolygonShape.new()
+
+const GENERATE = false
 
 # HEIGHT is vertical height (+y) off of the ground plane (x,z)
 # UNIT is the length of the four equal edges of the pentagon
@@ -132,8 +133,10 @@ func generate_cairo_pentagon() -> ArrayMesh:
 	outline_tool.commit(array_mesh)
 	return array_mesh
 
-func _init():
-	cairo_mesh = generate_cairo_pentagon()
-	cairo_mesh_shape.set_points(cairo_mesh.get_faces())
-	mesh = cairo_mesh
+func _ready():
+	if GENERATE:
+		cairo_mesh = generate_cairo_pentagon()
+		cairo_mesh_shape.set_points(cairo_mesh.get_faces())
+		mesh = cairo_mesh
+		$CollisionShape.shape = cairo_mesh_shape
 

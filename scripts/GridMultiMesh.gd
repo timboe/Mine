@@ -1,4 +1,3 @@
-tool
 extends MultiMeshInstance
 
 onready var rand := RandomNumberGenerator.new()

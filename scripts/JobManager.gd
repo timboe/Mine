@@ -9,12 +9,17 @@ enum JobType {CONSTRUCT_MONORAIL, CONSTRUCT_BUILDING, REINFORCE, CLAIM_TILE}
 
 var player_jobs : Array
 var unassigned_count : Array
+var priorities : Array
 var job_id := -1
 
 func _ready():
 	for _i in range(GlobalVars.MAX_PLAYERS):
 		player_jobs.push_back( {} ) 
 		unassigned_count.push_back( 0 )
+		var p : Array
+		for _jt in JobType:
+			p.push_back(1)
+		priorities.push_back(p)
 
 func add_job(var player : int, var type : int, var place, var target):
 	assert(player >= 0 and player < GlobalVars.MAX_PLAYERS)
@@ -34,12 +39,12 @@ func add_job(var player : int, var type : int, var place, var target):
 		return # Already on the books
 	#
 	job_id += 1
-	job = {"id": job_id, "player": player, "type": type, "priority": 0,
+	job = {"id": job_id, "player": player, "type": type,
 		"place": place, "target": target, "assigned": null,
 		"abandoned_by": null, "abandoned_n": 0, "abandoned_timer": 0.0}
 	unassigned_count[player] += 1
 	job_dict[job_id] = job
-	print("New job ", job)
+	#print("New job ", job)
 
 func remove_job(var player : int, var id_to_remove : int):
 	var job_dict = player_jobs[player]
@@ -56,7 +61,7 @@ func abandon_job(var player : int, var id_to_remove : int):
 	job["abandoned_n"] += 1
 	job["abandoned_timer"] = min(DELAY_MAX, job["abandoned_n"] * DELAY_PER_ABANDON)
 	
-func try_and_assign(var zoomba, var job_dict : Dictionary) -> bool:
+func try_and_assign(var zoomba, var job_dict : Dictionary, var priority : Array) -> bool:
 	var bestest_job = null
 	var zoomba_loc : Vector3 = zoomba.location.pathing_centre
 	for job in job_dict.values():
@@ -64,10 +69,10 @@ func try_and_assign(var zoomba, var job_dict : Dictionary) -> bool:
 			continue # Already have a job
 		if job["abandoned_timer"] > 0.0:
 			continue # Don't reassign this one yet
-		if job["priority"] == -1:
+		if priority[job["type"]] == -1:
 			continue # We're not doing jobs of this type ATM
 		if bestest_job == null \
-			or job["priority"] < bestest_job["priority"] \
+			or priority[job["type"]] < priority[bestest_job["type"]] \
 			or job["place"].pathing_centre.distance_to( zoomba_loc ) \
 				< bestest_job["place"].pathing_centre.distance_to( zoomba_loc ) :
 			bestest_job = job
@@ -89,7 +94,7 @@ func assign_jobs():
 				continue # Someone else's zoomba
 			if zoomba.scram_count > 0:
 				continue # Zoomba panicking about something
-			if try_and_assign(zoomba, player_jobs[player]):
+			if try_and_assign(zoomba, player_jobs[player], priorities[player]):
 				unassigned_count[ player ] -= 1
 
 func _on_AssignJobs_timeout():

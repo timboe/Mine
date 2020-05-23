@@ -18,6 +18,7 @@ var job_manager : Node
 var player : int # Who owns this floor
 var building # What is built here
 var claim_strength : int = 0
+var pulse_count : int = 0
 
 var monorail_script_resource = load("res://scripts/Monorail.gd")
 
@@ -25,6 +26,7 @@ var monorail_script_resource = load("res://scripts/Monorail.gd")
 var pathing_centre = null
 
 onready var HEIGHT : float = GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET
+
 
 const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
 const HOVER_COLOUR : Color = Color(0/255.0, 45/255.0, 227/255.0)
@@ -38,9 +40,10 @@ const OWNED_COLOUR : Array = [
 	Color(0, 1, 0),
 ]
 
-const CAPTURE_TIME = 1.5
-
-const FADE_TIME : float = 5.0
+const PULSE_TIME := 0.1 # Time in seconds to pulse for
+const PULSE_DECAY := 0.001 # Amount to reduce pulse by per tile
+const CAPTURE_TIME = 1.5 # Time in seconds to capture per enemy neighbour
+const FADE_TIME : float = 5.0 # Time to allow revoke of destroy order
 
 # Only have one countdown timer
 var tween_active := false
@@ -254,6 +257,20 @@ func done_deconstruct():
 		n.a_neighbour_just_fell()
 	assign_monorail_jobs_on_demolish()
 	particles_instance.queue_free()
+	
+func pulse_start(var pulse_e, var pulse_n):
+	pulse_count = pulse_n
+	tween.interpolate_property(self.mat, "emission_energy",
+		self.mat.emission_energy + pulse_e, self.mat.emission_energy, PULSE_TIME)
+	tween.interpolate_callback(self, PULSE_TIME, "pulse_end", pulse_e, pulse_n)
+		
+func pulse_end(var pulse_e, var pulse_n):
+	pulse_e -= PULSE_DECAY
+	if pulse_e <= 0:
+		return
+	for n in paths.keys():
+		if n.state == State.DESTROYED and n.pulse_count < pulse_count and n.player == player:
+			n.pulse_start(pulse_e, pulse_n)
 
 func _on_StaticBody_mouse_entered():
 	update_HOVER_color(true)

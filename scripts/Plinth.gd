@@ -1,5 +1,6 @@
-tool
 extends MeshInstance
+
+const GENERATE = false
 
 var cairo = preload("res://scripts/Cairo.gd")
 var helper = preload("res://scripts/MonumentHelper.gd")
@@ -58,6 +59,9 @@ func add_plinth(var mesh_tool : SurfaceTool, var edge_tool : SurfaceTool):
 	helper.add_vertex_alt(mesh_tool, edge_tool, HEIGHT, p4_inner)
 
 func _init():
+	if !GENERATE:
+		return
+	
 	var edge_tool = SurfaceTool.new()
 	var mesh_tool = SurfaceTool.new()
 	edge_tool.begin(Mesh.PRIMITIVE_LINES)

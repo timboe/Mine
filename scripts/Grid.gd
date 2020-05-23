@@ -1,11 +1,15 @@
-tool
 extends MeshInstance
+
+const GENERATE = false
 
 const LENGTH : float = 100.0
 const STEPS : int = 10
 const STEP_SIZE : float = LENGTH / STEPS
 
 func _init():
+	if not GENERATE:
+		return
+		
 	var surface_tool = SurfaceTool.new()
 	var mesh_tool = SurfaceTool.new()
 	surface_tool.begin(Mesh.PRIMITIVE_LINES)
