@@ -214,7 +214,7 @@ func apply_initial_monorail_and_zoomba():
 		for n in tile.neighbours:
 			if n.state == TileElement.State.DESTROYED: # Find a vaid initial link
 				done = true
-				tile.building.zoomba_start_loc = n
+				tile.building.spawn_start_loc = n
 				var zoomba = tile.building.add_zoomba()
 				var mr : Monorail = tile.paths[n]
 				mr.set_constructed(zoomba, true) # Sets as constucted by player

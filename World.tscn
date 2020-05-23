@@ -140,9 +140,14 @@ script = ExtResource( 9 )
 wait_time = 5.0
 autostart = true
 
+[node name="StartGenerator" type="Timer" parent="."]
+wait_time = 0.333
+autostart = true
+
 [node name="PulseTimer" type="Timer" parent="."]
 wait_time = 5.0
 autostart = true
 script = ExtResource( 8 )
 [connection signal="timeout" from="JobManager/AssignJobs" to="JobManager" method="_on_AssignJobs_timeout"]
+[connection signal="timeout" from="StartGenerator" to="PulseTimer" method="_on_StartGenerator_timeout"]
 [connection signal="timeout" from="PulseTimer" to="PulseTimer" method="_on_PulseTimer_timeout"]
