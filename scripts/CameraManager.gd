@@ -1,4 +1,4 @@
-extends Node
+extends Spatial
 
 enum CameraStatus {OVERHEAD, TO_FPS, FPS, TO_OVERHEAD}
 onready var camera_status : int = CameraStatus.OVERHEAD
@@ -51,6 +51,13 @@ func quat_transform(var amount : float):
 	var mid = quat_from.slerp(quat_to, amount)
 	overhead_camera.transform.basis = Basis(mid)
 
+# move me
+func _set_owner(node, root):
+	if node != root:
+		node.owner = root
+	for child in node.get_children():
+		_set_owner(child, root)
+
 func _input(event):
 	if event.is_action_pressed("scram"): # Temp - delete this
 		for zoomba in get_tree().get_nodes_in_group("zoombas"):
@@ -58,6 +65,19 @@ func _input(event):
 	if event.is_action_pressed("zoomba"): # Temp - delete this
 		for mcp in get_tree().get_nodes_in_group("mcp"):
 			mcp.add_zoomba()
+	if event.is_action_pressed("save"): # Temp - delete this
+		var scene = PackedScene.new()
+		var scene_root = $"../CairoTilesetGen"
+		_set_owner(scene_root, scene_root)
+		scene.pack(scene_root)
+		ResourceSaver.save('res://my_scene.tscn', scene)
+		print("saved")
+	if event.is_action_pressed("load"): # Temp - delete this
+		var loaded_player = load("res://my_scene.tscn").instance()	
+		$"../CairoTilesetGen".queue_free()
+		$"../".add_child(loaded_player)
+	if event.is_action_pressed("generate"): # Temp - delete this
+		$"../CairoTilesetGen"._generate()
 	if event.is_action_pressed("capture_toggle"):
 		match camera_status:
 			CameraStatus.OVERHEAD:
@@ -160,7 +180,7 @@ func to_overhead_cam_end():
 	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
 	spawn_particles.emitting = false
 	
-func add_trauma(var amount : float, var from, var add_linger):
+func add_trauma(var amount : float, var from, var add_linger = false):
 	var c : Vector3 = overhead_camera.to_global(Vector3.ZERO) if overhead_camera.current else fps_camera.to_global(Vector3.ZERO)
 	var d : float = from.distance_to(c) if from is Vector3 else 0.0
 	linger = max(linger, add_linger) if add_linger is float else linger

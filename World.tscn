@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=2]
+[gd_scene load_steps=22 format=2]
 
 [ext_resource path="res://scenes/CairoTilesetGen.tscn" type="PackedScene" id=1]
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=2]
@@ -9,7 +9,10 @@
 [ext_resource path="res://images/star_05.png" type="Texture" id=7]
 [ext_resource path="res://scripts/PulseTimer.gd" type="Script" id=8]
 [ext_resource path="res://scripts/JobManager.gd" type="Script" id=9]
+[ext_resource path="res://scripts/ControlUI.gd" type="Script" id=10]
 [ext_resource path="res://scenes/Blueprints.tscn" type="PackedScene" id=11]
+[ext_resource path="res://scripts/BuildingManager.gd" type="Script" id=12]
+[ext_resource path="res://scripts/EnergyManager.gd" type="Script" id=13]
 
 [sub_resource type="OpenSimplexNoise" id=1]
 
@@ -84,7 +87,44 @@ adjustment_saturation = 2.0
 
 [node name="World" type="Spatial"]
 
-[node name="CameraManager" type="Node" parent="."]
+[node name="ControlUI" type="Control" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource( 10 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ControlUI"]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -14.0
+grow_horizontal = 0
+mouse_filter = 2
+size_flags_horizontal = 3
+custom_constants/separation = 32
+alignment = 1
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Gen" type="Label" parent="ControlUI/HBoxContainer"]
+margin_left = 470.0
+margin_right = 497.0
+margin_bottom = 14.0
+mouse_filter = 1
+text = "GEN"
+
+[node name="Vat" type="Label" parent="ControlUI/HBoxContainer"]
+margin_left = 529.0
+margin_right = 553.0
+margin_bottom = 14.0
+mouse_filter = 1
+text = "VAT"
+
+[node name="CameraManager" type="Spatial" parent="."]
 script = ExtResource( 6 )
 noise = SubResource( 1 )
 
@@ -124,14 +164,20 @@ script = ExtResource( 4 )
 [node name="Player" parent="." instance=ExtResource( 5 )]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 20, 0 )
 
-[node name="Blueprints" parent="." instance=ExtResource( 11 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 20, -20 )
-
-[node name="BlueprintsDisabled" parent="." instance=ExtResource( 11 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 20, -20 )
+[node name="BuildingManager" type="Spatial" parent="."]
+script = ExtResource( 12 )
 
 [node name="ObjectFactory" parent="." instance=ExtResource( 11 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 20, -20 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -50, 0 )
+
+[node name="BlueprintsEnabled" parent="." instance=ExtResource( 11 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -50, 0 )
+
+[node name="BlueprintsDisabled" parent="." instance=ExtResource( 11 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -50, 0 )
+
+[node name="EnergyManager" type="Spatial" parent="."]
+script = ExtResource( 13 )
 
 [node name="JobManager" type="Spatial" parent="."]
 script = ExtResource( 9 )
@@ -148,6 +194,10 @@ autostart = true
 wait_time = 5.0
 autostart = true
 script = ExtResource( 8 )
+
+[node name="Tween" type="Tween" parent="."]
+[connection signal="gui_input" from="ControlUI/HBoxContainer/Gen" to="ControlUI" method="_on_Gen_gui_input"]
+[connection signal="gui_input" from="ControlUI/HBoxContainer/Vat" to="ControlUI" method="_on_Vat_gui_input"]
 [connection signal="timeout" from="JobManager/AssignJobs" to="JobManager" method="_on_AssignJobs_timeout"]
 [connection signal="timeout" from="StartGenerator" to="PulseTimer" method="_on_StartGenerator_timeout"]
 [connection signal="timeout" from="PulseTimer" to="PulseTimer" method="_on_PulseTimer_timeout"]

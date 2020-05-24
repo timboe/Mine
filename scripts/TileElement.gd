@@ -13,12 +13,16 @@ var paths : Dictionary # dict of all pathable neighbours. Key=neighbour, Value=c
 var neighbours : Array # Array of all neighbours (including immutible ones)
 var mat : SpatialMaterial
 var tween : Tween
-var camera_manager : Node 
-var job_manager : Node 
+var camera_manager : Spatial 
+var building_manager
+var job_manager : JobManager 
 var player : int # Who owns this floor
 var building # What is built here
+var monorail_cap
+var monorail_cap_moved := false
 var claim_strength : int = 0
 var pulse_count : int = 0
+var updating_owner_emission := false
 
 var monorail_script_resource = load("res://scripts/Monorail.gd")
 
@@ -49,6 +53,7 @@ const FADE_TIME : float = 5.0 # Time to allow revoke of destroy order
 var tween_active := false
 
 func set_building(var b):
+	assert(building == null)
 	building = b
 	b.location = self
 
@@ -120,6 +125,7 @@ func delayed_ready():
 	tween = $"../../../Tween"
 	camera_manager = $"../../../../CameraManager"
 	job_manager = $"../../../../JobManager"
+	building_manager = $"../../../../BuildingManager"
 	mat = get_child(0).get_surface_material(0)
 	mat.emission_energy = 1.0 
 	mat.emission_enabled = false
@@ -210,8 +216,19 @@ func update_owner_emission():
 	for n in paths.keys():
 		if n.player == player:
 			claim_strength += 1
-	tween.interpolate_property(self.mat, "emission_energy", null, claim_strength * 0.02, 0.5)
+	tween.interpolate_property(self.mat, "emission_energy", null, claim_strength * 0.01, 0.5)
+	tween.interpolate_callback(self, 0.5, "owner_emission_done")
 	tween.start()
+	updating_owner_emission = true
+	
+func owner_emission_done():
+	updating_owner_emission = false
+	
+func raise_cap(var time):
+	if not monorail_cap_moved:
+		tween.interpolate_property(monorail_cap, "translation:y", null, HEIGHT, time)
+		tween.start()
+		monorail_cap_moved = true
 
 func do_deconstruct_start(var time : float):
 	if tween_active:
@@ -260,11 +277,13 @@ func done_deconstruct():
 	
 func pulse_start(var pulse_e, var pulse_n):
 	pulse_count = pulse_n
-	tween.interpolate_property(self.mat, "emission_energy",
-		self.mat.emission_energy + pulse_e, self.mat.emission_energy, PULSE_TIME)
-	tween.interpolate_callback(self, PULSE_TIME, "pulse_end", pulse_e, pulse_n)
+	if not updating_owner_emission:
+		mat.emission_energy += pulse_e
+	tween.interpolate_callback(self, PULSE_TIME, "pulse_end", pulse_e, pulse_n, not updating_owner_emission)
 		
-func pulse_end(var pulse_e, var pulse_n):
+func pulse_end(var pulse_e, var pulse_n, var i_pulsed):
+	if i_pulsed:
+		mat.emission_energy -= pulse_e
 	pulse_e -= PULSE_DECAY
 	if pulse_e <= 0:
 		return
@@ -273,12 +292,16 @@ func pulse_end(var pulse_e, var pulse_n):
 			n.pulse_start(pulse_e, pulse_n)
 
 func _on_StaticBody_mouse_entered():
+	if building_manager.is_placing():
+		return building_manager.update_blueprint(self)
 	update_HOVER_color(true)
 	GlobalVars.SELECTED_NODE = self
 	if Input.is_mouse_button_pressed(1):
 		update_selected(0)
 
 func _on_StaticBody_mouse_exited():
+	if building_manager.is_placing():
+		return
 	update_HOVER_color(false)
 	
 func start_capture(var by_whome):
@@ -307,11 +330,14 @@ func set_captured(var by_whome):
 	by_whome.job_finished()
 
 func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, _shape_idx):
-	if event is InputEventMouseButton and event.is_pressed() and event.button_index == BUTTON_LEFT:
-		print("Me ", get_id(), " " , self)
-		for n in neighbours:
-			print(" N ", n.get_id() , " " , n.state , " " , n)
-		for thePath in paths.keys():
-			print (" Path -> ", thePath.get_id())
-		GlobalVars.SELECTING_MODE = (state == State.BUILT)
-		update_selected(0) # Currently only user who can click things
+	if not event is InputEventMouseButton or not event.is_pressed() or not event.button_index == BUTTON_LEFT:
+		return
+	if building_manager.is_placing():
+		return building_manager.place_blueprint(self)
+#	print("Me ", get_id(), " " , self)
+#	for n in neighbours:
+#		print(" N ", n.get_id() , " " , n.state , " " , n)
+#	for thePath in paths.keys():
+#		print (" Path -> ", thePath.get_id())
+	GlobalVars.SELECTING_MODE = (state == State.BUILT)
+	update_selected(0) # Currently only user who can click things

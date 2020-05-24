@@ -1,10 +1,14 @@
 extends Timer
 
 var gen_start = 0
+var pulse := 0
 
 func _on_PulseTimer_timeout():
 	for mcp in get_tree().get_nodes_in_group("mcp"):
-		mcp.on_PulseTimer_timeout()
+		mcp.on_PulseTimer_timeout(pulse)
+	for gen in get_tree().get_nodes_in_group("generator"):
+		gen.on_PulseTimer_timeout(pulse)
+	pulse += 1
 
 func _on_StartGenerator_timeout():
 	gen_start += 1

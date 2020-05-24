@@ -7,7 +7,7 @@
 [ext_resource path="res://materials/disabled.tres" type="Material" id=5]
 [ext_resource path="res://materials/aluminium.tres" type="Material" id=6]
 [ext_resource path="res://materials/beacon_material.tres" type="Material" id=7]
-[ext_resource path="res://materials/stopper_material.tres" type="Material" id=8]
+[ext_resource path="res://materials/chrome_material.tres" type="Material" id=8]
 [ext_resource path="res://materials/glass_eye_spatialmaterial.tres" type="Material" id=9]
 [ext_resource path="res://materials/player0_material.tres" type="Material" id=10]
 [ext_resource path="res://scenes/Monorail.tscn" type="PackedScene" id=11]
@@ -16,6 +16,7 @@
 [ext_resource path="res://materials/player2_material.tres" type="Material" id=14]
 [ext_resource path="res://materials/player1_material.tres" type="Material" id=15]
 [ext_resource path="res://materials/player3_material.tres" type="Material" id=16]
+
 
 [sub_resource type="CapsuleMesh" id=1]
 radius = 3.0

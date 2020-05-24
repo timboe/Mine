@@ -2,7 +2,7 @@
 
 [ext_resource path="res://scripts/Plinth.gd" type="Script" id=1]
 [ext_resource path="res://scenes/Zapper.tscn" type="PackedScene" id=2]
-[ext_resource path="res://materials/stopper_material.tres" type="Material" id=3]
+[ext_resource path="res://materials/chrome_material.tres" type="Material" id=3]
 [ext_resource path="res://meshes/plinth.tres" type="ArrayMesh" id=4]
 [ext_resource path="res://images/circle_03.png" type="Texture" id=7]
 [ext_resource path="res://scripts/Building.gd" type="Script" id=8]
@@ -141,7 +141,7 @@ color = Color( 0, 1, 1, 1 )
 
 [sub_resource type="ParticlesMaterial" id=23]
 lifetime_randomness = 0.9
-direction = Vector3( 1, 1, 1 )
+direction = Vector3( 1, 1, 0 )
 spread = 180.0
 gravity = Vector3( 0, 0, 0 )
 initial_velocity = 40.0
@@ -194,6 +194,7 @@ scale_curve = SubResource( 20 )
 color = Color( 0, 1, 1, 1 )
 
 [node name="Generator" type="StaticBody"]
+input_ray_pickable = false
 script = ExtResource( 8 )
 
 [node name="Plinth" type="MeshInstance" parent="."]

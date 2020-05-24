@@ -8,12 +8,15 @@ onready var cairo = $Cairo
 onready var tiles : Node = $Tiles
 onready var monorail = preload("res://scenes/Monorail.tscn")
 
+var generated = false
+
+var tile_id : int = 0
 var tile_dictionary : Dictionary
 
 var rand := RandomNumberGenerator.new()
 
 onready var tile_script = preload("res://scripts/TileElement.gd")
-var tile_id : int = 0
+
 
 func populate(var physics_body_instance : StaticBody, var rotation_group : String):
 	var mesh_instance = MeshInstance.new()
@@ -112,12 +115,17 @@ func _generate():
 			if (y+border < 0 - floor_v.x  ||  y-border > arena - floor_v.x): continue
 			if (x+border < 0 + floor_v.y  ||  x-border > arena + floor_v.y): continue
 			add_cluster(x, y)
+	set_physics_process(true)
+	generated = true
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	_generate()
+	pass
+	#_generate()
 
 func _physics_process(var _delta):
+	if not generated:
+		return
 	set_physics_process(false)
 	print("Phys once")
 	if Engine.editor_hint:
@@ -148,12 +156,18 @@ func set_neighbours():
 		t.origin.y = 0
 		tile.pathing_centre = t.origin
 		$PathingManager.add_tile(tile)
+		var cap : MeshInstance = $"../ObjectFactory/MonorailCap".duplicate()
+		tile.add_child(cap)
+		tile.monorail_cap = cap
+		# -0.2 to hide
+		cap.transform.origin += Vector3(cairo.RIGHT_POINT__UP, cairo.HEIGHT - 0.5, cairo.RIGHT_POINT__UP)
 
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
 		if tile.get_id() in GlobalVars.LEVEL.MCP:
 			var mcp : StaticBody = $"../ObjectFactory/MCP".duplicate()
 			mcp.location = tile
+			mcp.state = mcp.State.CONSTRUCTED
 			mcp.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
 			mcp.transform = tile.get_global_transform()
 			mcp.transform.origin.y = 0
@@ -209,7 +223,6 @@ func apply_initial_monorail_and_zoomba():
 	for id in GlobalVars.LEVEL.MCP:
 		var player = GlobalVars.LEVEL.MCP.find( id )
 		var tile : TileElement = tile_dictionary[id] # Get ID of MCP tile
-		tile.building.update_monorail(true)
 		var done := false
 		for n in tile.neighbours:
 			if n.state == TileElement.State.DESTROYED: # Find a vaid initial link
@@ -219,6 +232,7 @@ func apply_initial_monorail_and_zoomba():
 				var mr : Monorail = tile.paths[n]
 				mr.set_constructed(zoomba, true) # Sets as constucted by player
 				break
+		tile.building.update_monorail()
 		if not done:
 			print("Could not connect MCP to starting tile!")
 			assert(false)

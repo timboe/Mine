@@ -29,6 +29,8 @@ func start_construction(var by_whome):
 	tween.interpolate_property(self, "translation:y", null, 0.0, CONSTRUCT_TIME)
 	tween.interpolate_callback(self, CONSTRUCT_TIME, "set_constructed", by_whome, false)
 	tween.start()
+	tile_owner.raise_cap(CONSTRUCT_TIME)
+	tile_target.raise_cap(CONSTRUCT_TIME)
 	
 func abandon_construction():
 	assert(state == State.UNDER_CONSTRUCTION)
@@ -50,7 +52,10 @@ func set_constructed(var by_whome, var instant : bool):
 		tile_owner.player = by_whome.player
 	if tile_target.player == -1:
 		tile_target.player = by_whome.player
-	update_pathing()
+	if tile_owner.building != null or tile_target.building != null:
+		update_building_passable()
+	else:
+		update_pathing()
 	tile_owner.update_owner_emission()
 	tile_target.update_owner_emission()
 	# Can we connect these out further?
@@ -63,6 +68,19 @@ func set_constructed(var by_whome, var instant : bool):
 	if not instant:
 		by_whome.job_finished()
 
+func update_building_passable():
+	if (state != State.CONSTRUCTED):
+		return
+	var owner_accessible = (tile_owner.building == null) 
+	var target_accessible = (tile_target.building == null)
+	var state : int =  Pathing.NONE
+	if owner_accessible and target_accessible:
+		state = Pathing.BIDIRECTIONAL
+	elif owner_accessible and not target_accessible:
+		state = Pathing.TARGET_TO_OWNER
+	elif not owner_accessible and target_accessible:
+		state = Pathing.OWNER_TO_TARGET
+	set_passable_for_all(state)
 
 func set_passable_for_all(var passable_state):
 	for p in range(GlobalVars.MAX_PLAYERS):

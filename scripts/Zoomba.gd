@@ -41,7 +41,7 @@ func initialise(var loc : TileElement, var pl : int):
 func scram():
 	scram_count = SCRAM
 	if state != State.IDLE:
-		abandon_job()
+		abandon_job(true)
 		
 func assign(var new_job : Dictionary):
 	assert(job == null)
@@ -56,12 +56,10 @@ func pathing_callback():
 	if scram_count > 0:
 		assert(state == State.IDLE)
 		return idle_callback()
-		return
 	# Second check if at destination
 	assert(state == State.PATHING)
 	if location.get_id() == job["place"].get_id():
 		return start_work()
-		return
 	# Third, run pathing
 	var pm = $"../../PathingManager"
 	if path.size() == 0:
@@ -69,32 +67,34 @@ func pathing_callback():
 		#print("player " , player , " from " , location , " to " , job["place"] , " size " , path.size())
 		if path.size() < 2:
 			# We were unable to path
-			return abandon_job()
-			return
+			return abandon_job(false)
 		progress = 1 # 0 is our starting location
 	assert(progress < path.size())
 	location = pm.get_tile( path[progress] )
 	progress += 1
 	move("pathing_callback")
 
-func abandon_job():
+func abandon_job(var have_active_callback : bool = true):
 	assert(state == State.PATHING or state == State.WORKING)
 	assert(job != null)
 	match state:
 		State.PATHING:
-			return abandon_job_while_pathing()
+			return abandon_job_while_pathing(have_active_callback)
 		State.WORKING:
-			return abandon_job_while_working()
+			return abandon_job_while_working(have_active_callback)
 		
-func abandon_job_while_pathing():
+func abandon_job_while_pathing(var have_active_callback : bool):
 	state = State.IDLE
 	var id = job["id"]
+	print("ABANDONING JOB WHILE PATHING ", job)
 	job = null
-	print("ABANDONING JOB ", id)
 	$"../../../JobManager".abandon_job(player, id)
-	# Wait for pathing callback
+	# Wait for pathing callback, unless it was the pathing itself which failed
+	if not have_active_callback:
+		idle_callback()
 	
-func abandon_job_while_working():
+func abandon_job_while_working(var have_active_callback : bool):
+	assert(have_active_callback == true)
 	$Zapper.visible = false
 	match job["type"]:
 		JobManager.JobType.CONSTRUCT_MONORAIL:
@@ -103,13 +103,16 @@ func abandon_job_while_working():
 		JobManager.JobType.CLAIM_TILE:
 			var tile = job["place"]
 			tile.abandon_capture(self)
+		JobManager.JobType.CONSTRUCT_BUILDING:
+			var building = job["target"].building
+			building.abandon_construction()
 		_:
 			print("UNKNOWN JOB TYPE")
 			assert(false)
 	state = State.IDLE
 	var id = job["id"]
+	print("ABANDONING JOB WHILE WORKIN ", id)
 	job = null
-	print("ABANDONING JOB ", id)
 	$"../../../JobManager".abandon_job(player, id)
 	# If we abandoned while we were working - then we were waiting for the end-of
 	# job callback which will now never come. Hence we now need to call idle_callback
@@ -136,7 +139,16 @@ func start_work():
 			if tile.player != player:
 				tile.start_capture(self)
 			else: # Job was already done 
-				print("Capture job was already completed")
+				print("Capture job was already handled")
+				job_finished()
+		JobManager.JobType.CONSTRUCT_BUILDING:
+			$Zapper.cast_to.y = cairo_class.TOP_POINT__RIGHT
+			var building = job["target"].building
+			assert(building != null)
+			if building.state == building.State.BLUEPRINT:
+				building.start_construction(self)
+			else: # Job was already done 
+				print("Building construction job was already handled")
 				job_finished()
 		_:
 			print("UNKNOWN JOB TYPE")
@@ -147,7 +159,9 @@ func quick_rotate():
 		 return
 	setup_rotation(job["target"], null)
 	var tween : Tween = $"../../Tween"
+# warning-ignore:return_value_discarded
 	tween.interpolate_method(self, "quat_transform", 0.0, 1.0, QUICK_ROTATE_TIME)
+# warning-ignore:return_value_discarded
 	tween.start()
 
 func job_finished():
@@ -169,7 +183,7 @@ func idle_callback():
 		return
 		
 	# Get possible ways out of this tile
-	var possible_destinations : Array
+	var possible_destinations := []
 	for to_test in location.paths.keys():
 		var mr = location.paths[to_test]
 		if mr.get_passable(player, location, to_test):
@@ -226,9 +240,13 @@ func move(var callback):
 	elif state == State.IDLE:
 		time *= 2.0 
 	# else - pathing, time *= 1.0
+# warning-ignore:return_value_discarded
 	tween.interpolate_method(self, "quat_transform", 0.0, 1.0,time/2.0)
+# warning-ignore:return_value_discarded
 	tween.interpolate_property(self, "translation", null, location.pathing_centre, time)
+# warning-ignore:return_value_discarded
 	tween.interpolate_callback(self, time, callback)
+# warning-ignore:return_value_discarded
 	tween.start()
 	
 
