@@ -1,0 +1,46 @@
+[gd_scene load_steps=7 format=2]
+
+[ext_resource path="res://images/smoke_06.png" type="Texture" id=1]
+
+[sub_resource type="Curve" id=1]
+max_value = 5.0
+_data = [ Vector2( 0, 0.130682 ), 0.0, 0.0, 0, 0, Vector2( 0.0555556, 2.52841 ), 0.0, 0.0, 0, 0, Vector2( 0.575758, 1.38068 ), -3.78947, -3.78947, 0, 0, Vector2( 1, 0 ), 0.0, 0.0, 0, 0 ]
+
+[sub_resource type="CurveTexture" id=2]
+curve = SubResource( 1 )
+
+[sub_resource type="ParticlesMaterial" id=3]
+emission_shape = 2
+emission_box_extents = Vector3( 5, 10, 5 )
+direction = Vector3( 0, 1, 0 )
+spread = 90.0
+gravity = Vector3( 0, 5, 0 )
+initial_velocity = 20.0
+initial_velocity_random = 1.0
+angle = 360.0
+angle_random = 1.0
+scale = 5.0
+scale_curve = SubResource( 2 )
+
+[sub_resource type="SpatialMaterial" id=4]
+flags_unshaded = true
+vertex_color_use_as_albedo = true
+params_blend_mode = 1
+params_billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+albedo_texture = ExtResource( 1 )
+
+[sub_resource type="QuadMesh" id=5]
+material = SubResource( 4 )
+
+[node name="BuildinConstructedParticles" type="Particles"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 10, 6.4 )
+emitting = false
+amount = 512
+lifetime = 1.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource( 3 )
+draw_pass_1 = SubResource( 5 )

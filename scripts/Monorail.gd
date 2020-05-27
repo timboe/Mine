@@ -66,7 +66,7 @@ func set_constructed(var by_whome, var instant : bool):
 	tile_target.try_and_spread_capture()
 	transform.origin.y = 0
 	if not instant:
-		by_whome.job_finished()
+		by_whome.job_finished(true)
 
 func update_building_passable():
 	if (state != State.CONSTRUCTED):

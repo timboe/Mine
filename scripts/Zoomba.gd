@@ -49,28 +49,35 @@ func assign(var new_job : Dictionary):
 	assert(new_job["player"] == player)
 	state = State.PATHING
 	job = new_job
-	
+
+func check_pathing_valid() -> bool:
+	if path.size() == 0:
+		path = $"../../PathingManager".pathfind(player, location, job["place"])
+		progress = 1 # 0 is our starting location
+		#print("player " , player , " from " , location , " to " , job["place"] , " size " , path.size())
+		if path.size() < 2:
+			return false # We were unable to path
+	return true
+
 func pathing_callback():
 	# First - check we didn't scram while moving.
 	# If we did then we want to redirect to the idle callback
 	if scram_count > 0:
 		assert(state == State.IDLE)
 		return idle_callback()
-	# Second check if at destination
 	assert(state == State.PATHING)
+	# Second - check our job is stil valid
+	if not check_job_still_valid():
+		return job_finished(false)
+	# Third check if at destination
 	if location.get_id() == job["place"].get_id():
 		return start_work()
-	# Third, run pathing
-	var pm = $"../../PathingManager"
-	if path.size() == 0:
-		path = pm.pathfind(player, location, job["place"])
-		#print("player " , player , " from " , location , " to " , job["place"] , " size " , path.size())
-		if path.size() < 2:
-			# We were unable to path
-			return abandon_job(false)
-		progress = 1 # 0 is our starting location
+	# Fourth, run pathing
+	if not check_pathing_valid():
+		return abandon_job(false) # No active call-backs
+	# Fifth, move to next location
 	assert(progress < path.size())
-	location = pm.get_tile( path[progress] )
+	location = $"../../PathingManager".get_tile( path[progress] )
 	progress += 1
 	move("pathing_callback")
 
@@ -92,7 +99,7 @@ func abandon_job_while_pathing(var have_active_callback : bool):
 	# Wait for pathing callback, unless it was the pathing itself which failed
 	if not have_active_callback:
 		idle_callback()
-	
+		
 func abandon_job_while_working(var have_active_callback : bool):
 	assert(have_active_callback == true)
 	$Zapper.visible = false
@@ -100,12 +107,15 @@ func abandon_job_while_working(var have_active_callback : bool):
 		JobManager.JobType.CONSTRUCT_MONORAIL:
 			var mr = job["place"].paths[ job["target"] ]
 			mr.abandon_construction()
-		JobManager.JobType.CLAIM_TILE:
-			var tile = job["place"]
-			tile.abandon_capture(self)
 		JobManager.JobType.CONSTRUCT_BUILDING:
 			var building = job["target"].building
 			building.abandon_construction()
+		JobManager.JobType.CLAIM_TILE:
+			var tile = job["place"]
+			tile.abandon_capture(self)
+		JobManager.JobType.CLAIM_BUILDING:
+			var building = job["target"].building
+			building.abandon_capture()
 		_:
 			print("UNKNOWN JOB TYPE")
 			assert(false)
@@ -117,6 +127,44 @@ func abandon_job_while_working(var have_active_callback : bool):
 	# If we abandoned while we were working - then we were waiting for the end-of
 	# job callback which will now never come. Hence we now need to call idle_callback
 	idle_callback()
+
+func check_job_still_valid() -> bool:
+	match job["type"]:
+		JobManager.JobType.CONSTRUCT_MONORAIL:
+			# Get the monorail segment which connects this tile to the target
+			var mr = job["place"].paths[ job["target"] ]
+			if mr.state != mr_class.State.INITIAL:
+				return false  # Job was already done/stared (both directions can get queued, or another team might make the claim)
+		JobManager.JobType.CONSTRUCT_BUILDING:
+			var building = job["target"].building
+			if building == null:
+				# Expect rare
+				print("Building == null for CONSTRUCT_BUILDING job? ", job)
+				return false
+			if building.state != building.State.BLUEPRINT:
+				return false # Job was already done/stared (many directions can get queued)
+			if building.location.player != player:
+				return false # Was taken
+		JobManager.JobType.CLAIM_TILE:
+			var tile = job["place"]
+			if tile.player == player: 
+				return false # Already (re)/claimed
+			if tile.building != null:
+				return false # Should now be a claim building job
+		JobManager.JobType.CLAIM_BUILDING:
+			var building = job["target"].building
+			if building == null:
+				return false # Nothing left to claim
+			if job["place"].player != player:
+				return false # No longer own this adjacent tile
+			if building.location.player == player:
+				return false # Already captured
+			if building.capture_in_progress:
+				return false # Already being captured
+		_:
+			print("UNKNOWN JOB TYPE")
+			assert(false)
+	return true
 	
 func start_work():
 	assert(state == State.PATHING)
@@ -126,33 +174,32 @@ func start_work():
 	match job["type"]:
 		JobManager.JobType.CONSTRUCT_MONORAIL:
 			# Get the monorail segment which connects this tile to the target
-			$Zapper.cast_to.y = cairo_class.TOP_POINT__RIGHT
+			$Zapper.cast_to.y = cairo_class.UNIT
 			var mr = job["place"].paths[ job["target"] ]
-			if mr.state == mr_class.State.INITIAL:
-				mr.start_construction(self)
-			else: # Job was already done/stared (both directions can get queued, or another team might make the claim)
-				print("Monorail construction job was already handled")
-				job_finished()
-		JobManager.JobType.CLAIM_TILE:
-			$Zapper.cast_to.y = cairo_class.TOP_POINT__RIGHT / 2.0
-			var tile = job["place"]
-			if tile.player != player:
-				tile.start_capture(self)
-			else: # Job was already done 
-				print("Capture job was already handled")
-				job_finished()
+			assert(mr.state == mr_class.State.INITIAL)
+			mr.start_construction(self)
 		JobManager.JobType.CONSTRUCT_BUILDING:
-			$Zapper.cast_to.y = cairo_class.TOP_POINT__RIGHT
+			$Zapper.cast_to.y = cairo_class.UNIT
 			var building = job["target"].building
 			assert(building != null)
-			if building.state == building.State.BLUEPRINT:
-				building.start_construction(self)
-			else: # Job was already done 
-				print("Building construction job was already handled")
-				job_finished()
+			building.start_construction(self)
+		JobManager.JobType.CLAIM_TILE:
+			$Zapper.cast_to.y = cairo_class.UNIT / 2.0
+			var tile = job["place"]
+			assert(tile.player != player)
+			tile.start_capture(self)
+		JobManager.JobType.CLAIM_BUILDING:
+			$Zapper.cast_to.y = cairo_class.UNIT
+			var building = job["target"].building
+			assert(building != null)
+			assert(job["place"].player == player)
+			building.start_capture(self)
 		_:
 			print("UNKNOWN JOB TYPE")
 			assert(false)
+
+
+
 			
 func quick_rotate():
 	if job["target"] == null:
@@ -164,8 +211,8 @@ func quick_rotate():
 # warning-ignore:return_value_discarded
 	tween.start()
 
-func job_finished():
-	assert(state == State.WORKING)
+func job_finished(var work_was_done : bool):
+	assert((work_was_done and state == State.WORKING) or (not work_was_done and state == State.PATHING))
 	assert(job != null)
 	state = State.IDLE
 	$Zapper.visible = false
@@ -248,7 +295,6 @@ func move(var callback):
 	tween.interpolate_callback(self, time, callback)
 # warning-ignore:return_value_discarded
 	tween.start()
-	
 
 func quat_transform(var amount : float):
 	var mid = quat_from.slerp(quat_to, amount)

@@ -165,10 +165,10 @@ func set_neighbours():
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
 		if tile.get_id() in GlobalVars.LEVEL.MCP:
+			tile.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
 			var mcp : StaticBody = $"../ObjectFactory/MCP".duplicate()
 			mcp.location = tile
 			mcp.state = mcp.State.CONSTRUCTED
-			mcp.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
 			mcp.transform = tile.get_global_transform()
 			mcp.transform.origin.y = 0
 			mcp.add_to_group("mcp")

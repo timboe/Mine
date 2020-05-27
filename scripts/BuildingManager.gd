@@ -10,7 +10,6 @@ var doing_placement : int = Type.NONE
 var placement_player : int = -1
 
 onready var energy_manager = $"../EnergyManager"
-onready var job_manager = $"../JobManager"
 onready var camera_manager = $"../CameraManager"
 
 const HIDE_DEPTH = -50
@@ -42,7 +41,7 @@ func update_blueprint(var tile : TileElement):
 		enabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
 		disabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
 		return
-	if tile.player == placement_player and energy_manager.can_afford(placement_player, 10.0) and get_access_tile(placement_player, tile) != null:
+	if tile.player == placement_player and energy_manager.can_afford(placement_player, 10.0) and tile.get_access_tiles().size() > 0:
 		enabled_blueprints[doing_placement].transform = tile.get_global_transform()
 		enabled_blueprints[doing_placement].transform.origin.y = -HIDE_DEPTH
 		disabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
@@ -50,14 +49,6 @@ func update_blueprint(var tile : TileElement):
 		disabled_blueprints[doing_placement].transform = tile.get_global_transform()
 		disabled_blueprints[doing_placement].transform.origin.y = -HIDE_DEPTH
 		enabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
-
-func get_access_tile(var player : int, var tile : TileElement):
-	for n in tile.paths.keys():
-		if n.building != null:
-			continue
-		if n.player == placement_player:
-			return n
-	return null
 
 func place_blueprint(var tile : TileElement):
 	assert(doing_placement != Type.NONE)
@@ -70,8 +61,8 @@ func place_blueprint(var tile : TileElement):
 		return
 	if not energy_manager.can_afford(placement_player, 10.0):
 		return
-	var access = get_access_tile(placement_player, tile)
-	if access == null:
+	var access_tiles : Array = tile.get_access_tiles()
+	if access_tiles.size() == 0:
 		return
 	#
 	var new_building = building_instances[doing_placement].duplicate()
@@ -99,7 +90,10 @@ func place_blueprint(var tile : TileElement):
 	new_building.transform = tile.get_global_transform()
 	new_building.transform.origin.y = 0
 	#
-	job_manager.add_job(placement_player, job_manager.JobType.CONSTRUCT_BUILDING, access, tile)
+	for z in get_tree().get_nodes_in_group("zoombas"):
+		z.path.resize(0) # Force re-pathing
+	#
+	new_building.queue_construction_jobs()
 	camera_manager.add_trauma(1.0, tile.pathing_centre)
 	#
 	doing_placement = Type.NONE

@@ -2,15 +2,17 @@ extends Spatial
 
 class_name JobManager
 
-const DELAY_PER_ABANDON = 10.0
+const DELAY_PER_ABANDON = 11.0
 const DELAY_MAX = 60.0
 
-enum JobType {CONSTRUCT_MONORAIL, CONSTRUCT_BUILDING, REINFORCE, CLAIM_TILE}
+enum JobType {CONSTRUCT_MONORAIL, CONSTRUCT_BUILDING, REINFORCE, CLAIM_TILE, CLAIM_BUILDING}
 
 var player_jobs : Array
 var unassigned_count : Array
 var priorities : Array
 var job_id := -1
+
+onready var dr = $DebugRender
 
 func _ready():
 	for _i in range(GlobalVars.MAX_PLAYERS):
@@ -20,6 +22,8 @@ func _ready():
 		for _jt in JobType:
 			p.push_back(1)
 		priorities.push_back(p)
+	if true: # Debug
+		set_process(true)
 
 func add_job(var player : int, var type : int, var place, var target):
 	assert(player >= 0 and player < GlobalVars.MAX_PLAYERS)
@@ -104,3 +108,33 @@ func _on_AssignJobs_timeout():
 		for job in player_jobs[player].values():
 			job["abandoned_timer"] -= $AssignJobs.wait_time
 	assign_jobs()
+
+func _process(delta):
+	# Debug renderer
+	dr.clear()
+	dr.begin(Mesh.PRIMITIVE_LINES)
+	for job in player_jobs[1].values():
+		var a = job["place"].pathing_centre
+		match job["type"]:
+			JobType.CONSTRUCT_MONORAIL:
+				var b = job["target"].pathing_centre
+				dr.set_color(Color.red)
+				dr.add_vertex(Vector3(a.x, a.y + 5, a.z))
+				dr.add_vertex(Vector3(b.x, b.y + 5, b.z))
+			JobType.CONSTRUCT_BUILDING:
+				var b = job["target"].pathing_centre
+				dr.set_color(Color.green)
+				dr.add_vertex(Vector3(a.x, a.y + 5, a.z))
+				dr.add_vertex(Vector3(b.x, b.y + 5, b.z))
+			JobType.CLAIM_BUILDING:
+				var b = job["target"].pathing_centre
+				dr.set_color(Color.purple)
+				dr.add_vertex(Vector3(a.x, a.y + 5, a.z))
+				dr.add_vertex(Vector3(b.x, b.y + 5, b.z))
+			JobType.CLAIM_TILE:
+				dr.set_color(Color.yellow)
+				dr.add_vertex(Vector3(a.x - 5, a.y + 5, a.z - 5))
+				dr.add_vertex(Vector3(a.x + 5, a.y + 5, a.z + 5))
+				dr.add_vertex(Vector3(a.x - 5, a.y + 5, a.z + 5))
+				dr.add_vertex(Vector3(a.x + 5, a.y + 5, a.z - 5))
+	dr.end()

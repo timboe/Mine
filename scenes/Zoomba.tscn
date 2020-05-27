@@ -28,7 +28,6 @@ height = 0.1
 
 [sub_resource type="SphereMesh" id=4]
 radius = 2.0
-height = 1.5
 
 [node name="Zoomba" type="Spatial"]
 script = ExtResource( 1 )
@@ -63,10 +62,10 @@ mesh = SubResource( 4 )
 material = ExtResource( 4 )
 
 [node name="CSGBox" type="CSGBox" parent="Body/CSGBody"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.75, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0 )
 operation = 2
 width = 4.0
-height = 0.5
+height = 1.0
 depth = 4.0
 
 [node name="CSGMeshEye" type="CSGMesh" parent="Body/CSGBody"]

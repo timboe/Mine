@@ -1,9 +1,10 @@
-[gd_scene load_steps=34 format=2]
+[gd_scene load_steps=35 format=2]
 
 [ext_resource path="res://scripts/Plinth.gd" type="Script" id=1]
 [ext_resource path="res://scenes/Zapper.tscn" type="PackedScene" id=2]
 [ext_resource path="res://materials/chrome_material.tres" type="Material" id=3]
 [ext_resource path="res://meshes/plinth.tres" type="ArrayMesh" id=4]
+[ext_resource path="res://scenes/BuildingConstructedParticles.tscn" type="PackedScene" id=5]
 [ext_resource path="res://images/circle_03.png" type="Texture" id=7]
 [ext_resource path="res://scripts/Building.gd" type="Script" id=8]
 
@@ -197,6 +198,8 @@ color = Color( 0, 1, 1, 1 )
 input_ray_pickable = false
 script = ExtResource( 8 )
 
+[node name="BuildinConstructedParticles" parent="." instance=ExtResource( 5 )]
+
 [node name="Plinth" type="MeshInstance" parent="."]
 mesh = ExtResource( 4 )
 material/0 = null
@@ -267,7 +270,6 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.3, 2, 6.4 )
 
 [node name="A3" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 17.08, 6.4 )
-emitting = false
 amount = 32
 explosiveness = 1.0
 process_material = SubResource( 13 )
@@ -275,7 +277,6 @@ draw_pass_1 = SubResource( 15 )
 
 [node name="A2" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 13.92, 6.4 )
-emitting = false
 amount = 64
 explosiveness = 1.0
 process_material = SubResource( 18 )
@@ -283,7 +284,6 @@ draw_pass_1 = SubResource( 15 )
 
 [node name="A1" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 10.75, 6.4 )
-emitting = false
 amount = 128
 explosiveness = 1.0
 process_material = SubResource( 21 )
@@ -291,7 +291,6 @@ draw_pass_1 = SubResource( 15 )
 
 [node name="B1" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 10.75, 6.4 )
-emitting = false
 amount = 128
 explosiveness = 1.0
 process_material = SubResource( 22 )
@@ -299,7 +298,6 @@ draw_pass_1 = SubResource( 15 )
 
 [node name="B2" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 7.583, 6.4 )
-emitting = false
 amount = 64
 explosiveness = 1.0
 process_material = SubResource( 23 )
@@ -307,7 +305,6 @@ draw_pass_1 = SubResource( 15 )
 
 [node name="B3" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 4.41, 6.4 )
-emitting = false
 amount = 32
 explosiveness = 1.0
 process_material = SubResource( 26 )
@@ -316,7 +313,6 @@ draw_pass_1 = SubResource( 15 )
 [node name="B4" type="Particles" parent="Particles"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 24.5753, 10.75, 6.4 )
 visible = false
-emitting = false
 amount = 128
 explosiveness = 1.0
 process_material = SubResource( 27 )

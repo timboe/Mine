@@ -24,8 +24,6 @@ var claim_strength : int = 0
 var pulse_count : int = 0
 var updating_owner_emission := false
 
-var monorail_script_resource = load("res://scripts/Monorail.gd")
-
 # Set to a vec3 if this tile is participating in the pathing. Note: in global coordinates
 var pathing_centre = null
 
@@ -183,14 +181,13 @@ func try_and_spread_monorail():
 	# Check for monorail construction tasks
 	# Call if a piece of monorail was just finished to/from me
 	# Here my owner determins who the jobs go to
-	# Also fires jobs to claim other tiles
 	if building != null:
 		return
 	for n in paths.keys():
 		if n.state != State.DESTROYED:
 			continue # No - can only connect to destroyed tiles
 		var mr = paths[n]
-		if mr.state == monorail_script_resource.State.INITIAL:
+		if mr.state == mr.State.INITIAL:
 			# Spread 
 			job_manager.add_job(player, job_manager.JobType.CONSTRUCT_MONORAIL, self, n)
 			
@@ -201,10 +198,13 @@ func try_and_spread_capture():
 		if n.state != State.DESTROYED:
 			continue # No - can only connect to destroyed tiles
 		var mr = paths[n]
-		if mr.state == monorail_script_resource.State.CONSTRUCTED:
+		if mr.state == mr.State.CONSTRUCTED:
 			# Attack Check
 			if player != -1 and n.player != -1 and player != n.player:
-				job_manager.add_job(player, job_manager.JobType.CLAIM_TILE, n, null)
+				if n.building != null:
+					job_manager.add_job(player, job_manager.JobType.CLAIM_BUILDING, self, n)
+				else:
+					job_manager.add_job(player, job_manager.JobType.CLAIM_TILE, n, null)
 
 func update_owner_emission():
 	if player == -1:
@@ -327,7 +327,15 @@ func set_captured(var by_whome):
 	for n in paths.keys(): # Give the enemy jobs to reclaim
 		n.update_owner_emission()
 		n.try_and_spread_capture()
-	by_whome.job_finished()
+	by_whome.job_finished(true)
+	
+func get_access_tiles():
+	var array : Array
+	for n in paths.keys():
+		if n.building == null and n.player == player:
+			assert(n.state == State.DESTROYED)
+			array.push_back(n)
+	return array
 
 func _on_StaticBody_input_event(_camera, event, _click_position, _click_normal, _shape_idx):
 	if not event is InputEventMouseButton or not event.is_pressed() or not event.button_index == BUTTON_LEFT:
