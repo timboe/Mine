@@ -77,14 +77,6 @@ func place_blueprint(var tile : TileElement):
 	add_child(new_building)
 	add_child(new_blueprint)
 	#
-	match doing_placement:
-		Type.MCP:
-			new_building.add_to_group("mcp")
-		Type.GEN:
-			new_building.add_to_group("generator")
-		Type.VAT:
-			new_building.add_to_group("vat")
-	#
 	enabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
 	new_blueprint.transform.origin.y = 0
 	new_building.transform = tile.get_global_transform()

@@ -1,5 +1,7 @@
 extends StaticBody
 
+class_name Building
+
 var id : int
 var location : TileElement
 
@@ -9,8 +11,6 @@ var updated_mat
 enum State {BLUEPRINT, UNDER_CONSTRUCTION, CONSTRUCTED, UNDER_DESTRUCTION}
 var state : int
 
-var to_rotate : Array
-const A_VELOCITY = 100
 const PULSE_INITIAL := 0.1
 const SPAWN_TIME : float = 5.0
 const CONSTRUCTION_TIME : float = 5.0
@@ -36,18 +36,6 @@ func set_spawn_start_loc(var s):
 	
 func _ready():
 	set_livery()
-	#
-	if get_name() == "MCP":
-		to_rotate.push_back($MCPTop)
-		to_rotate.push_back($MCPFaceTop)
-		to_rotate.push_back($MCPBottom)
-		to_rotate.push_back($MCPFaceBottom)
-	else:
-		set_process(false)
-		
-func _process(delta):
-	for tr in to_rotate:
-		tr.rotate_object_local(Vector3.UP, delta * A_VELOCITY)
 
 func update_monorail():
 	assert(location != null)
@@ -135,8 +123,8 @@ func set_captured(var by_whome):
 	set_livery()
 	capture_in_progress = false
 	if zoomba_constructing_me != null:
-		zoomba_constructing_me.scram()
-		# If I was being constructed, now I'm not
+		zoomba_constructing_me.scram() # If I was being con/de-structed, now I'm not
+	if state == State.BLUEPRINT:
 		queue_construction_jobs() # I might have been captured before I was constructed
 	
 func queue_construction_jobs():

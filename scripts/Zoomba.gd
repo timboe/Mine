@@ -273,7 +273,8 @@ func setup_rotation(var target, var look_at_from_target):
 		look_at(look_at_from_target.pathing_centre, Vector3.UP)
 		transform.origin = cache_origin
 	else:
-		look_at(target.pathing_centre, Vector3.UP)
+		if location != target:
+			look_at(target.pathing_centre, Vector3.UP)
 	rotation.y -= PI/2.0
 	quat_to = Quat(transform.basis)
 	transform.basis = cache_rot

@@ -1,7 +1,7 @@
 [gd_scene load_steps=28 format=2]
 
 [ext_resource path="res://scripts/Plinth.gd" type="Script" id=1]
-[ext_resource path="res://scripts/Building.gd" type="Script" id=2]
+[ext_resource path="res://scripts/MCP.gd" type="Script" id=2]
 [ext_resource path="res://materials/chrome_material.tres" type="Material" id=3]
 [ext_resource path="res://meshes/plinth.tres" type="ArrayMesh" id=4]
 [ext_resource path="res://scenes/BuildingConstructedParticles.tscn" type="PackedScene" id=5]

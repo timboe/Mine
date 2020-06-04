@@ -18,5 +18,7 @@ func recursive_set_blueprint(var node, var mat : ShaderMaterial):
 		# Material override
 		for i in range(node.get_surface_material_count()):
 			node.set_surface_material(i, mat)
+	elif node is CSGCombiner:
+		node.material_override = mat
 	elif node is Particles or node is Zapper:
 		node.queue_free()

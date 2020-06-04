@@ -13,3 +13,5 @@ https://community.khronos.org/t/outline-of-an-object/37339
 
 TEMP
 https://cc0textures.com/view?id=Metal012
+
+https://godotengine.org/asset-library/asset/201 (MIT). ATLAS

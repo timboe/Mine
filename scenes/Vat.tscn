@@ -6,7 +6,7 @@
 [ext_resource path="res://meshes/plinth.tres" type="ArrayMesh" id=4]
 [ext_resource path="res://scenes/BuildingConstructedParticles.tscn" type="PackedScene" id=5]
 [ext_resource path="res://materials/player0_material.tres" type="Material" id=6]
-[ext_resource path="res://scripts/Building.gd" type="Script" id=7]
+[ext_resource path="res://scripts/Vat.gd" type="Script" id=7]
 
 [sub_resource type="ConcavePolygonShape" id=1]
 data = PoolVector3Array( 0, 0, 0, 2, 1, 2, 1.7321, 1, 9, 0, 0, 0, 1.7321, 1, 9, 0, 0, 10, 0, 0, 10, 1.7321, 1, 9, 6.3397, 1, 11.6603, 0, 0, 10, 6.3397, 1, 11.6603, 6.3397, 0, 13.6603, 6.3397, 0, 13.6603, 6.3397, 1, 11.6603, 13, 1, 8.1603, 6.3397, 0, 13.6603, 13, 1, 8.1603, 15, 0, 8.6603, 15, 0, 8.6603, 13, 1, 8.1603, 9, 1, 1.7321, 15, 0, 8.6603, 9, 1, 1.7321, 10, 0, 0, 10, 0, 0, 9, 1, 1.7321, 2, 1, 2, 10, 0, 0, 2, 1, 2, 0, 0, 0, 2, 1, 2, 6.3397, 1, 11.6603, 1.7321, 1, 9, 2, 1, 2, 13, 1, 8.1603, 6.3397, 1, 11.6603, 2, 1, 2, 9, 1, 1.7321, 13, 1, 8.1603 )
@@ -38,7 +38,7 @@ data = PoolVector3Array( 0, 9, 4, 0.3921, 9, 3.9807, 0, 5.4, 4, 0.3921, 9, 3.980
 [sub_resource type="CylinderMesh" id=8]
 top_radius = 3.0
 bottom_radius = 3.0
-height = 10.0
+height = 17.5
 
 [node name="Vat" type="StaticBody"]
 input_ray_pickable = false
@@ -83,6 +83,6 @@ transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 11, 6.4 )
 shape = SubResource( 7 )
 
 [node name="Liquid" type="MeshInstance" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 7, 6.4 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, -7.5, 6.4 )
 mesh = SubResource( 8 )
 material/0 = ExtResource( 6 )
