@@ -6,7 +6,8 @@ onready var outline_material : ShaderMaterial = preload("res://materials/grid_ed
 onready var disabled_material : ShaderMaterial = preload("res://materials/disabled.tres")
 onready var cairo = $Cairo
 onready var tiles : Node = $Tiles
-onready var monorail = preload("res://scenes/Monorail.tscn")
+onready var monorail_mm : MultiMeshInstance = $MonorailMultimesh
+onready var building_manager : BuildingManager = $"../BuildingManager"
 
 var generated = false
 
@@ -95,6 +96,7 @@ func add_cluster(var xOff : int, var yOff : int):
 	spatial.add_child(physics_body_c)
 	spatial.add_child(physics_body_d)
 	tiles.add_child(spatial)
+# warning-ignore-all:standalone_ternary
 	physics_body_a.queue_free() if check_disabled(physics_body_a) else populate(physics_body_a, "tilesA")
 	physics_body_b.queue_free() if check_disabled(physics_body_b) else populate(physics_body_b, "tilesB")
 	physics_body_c.queue_free() if check_disabled(physics_body_c) else populate(physics_body_c, "tilesC")
@@ -131,7 +133,7 @@ func _physics_process(var _delta):
 	if Engine.editor_hint:
 		return
 	set_neighbours()
-	disabled_tiles_to_multimesh() # Broken
+	disabled_tiles_to_multimesh()
 	apply_loaded_level()
 	add_monorail()
 	apply_initial_monorail_and_zoomba()
@@ -149,33 +151,34 @@ func set_neighbours():
 		if tile.state == TileElement.State.BUILT:
 			assert(tile.neighbours.size() == 5)
 		ray.queue_free()
-	for tile in get_tree().get_nodes_in_group("interactive"):
+	var cap : MeshInstance = $"../ObjectFactory/MonorailCap"
+	var cap_mm = $MonorailCapMultimesh
+	cap_mm.multimesh = MultiMesh.new()
+	cap_mm.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	cap_mm.multimesh.mesh = cap.mesh.duplicate()
+	var interactive : Array = get_tree().get_nodes_in_group("interactive")
+	cap_mm.multimesh.instance_count = interactive.size()
+	var cap_count := 0
+	for tile in interactive:
 		var t = tile.get_child(0).get_transform()
 		t.origin += Vector3(cairo.RIGHT_POINT__UP, 0.0, cairo.RIGHT_POINT__UP)
 		t = tile.get_global_transform() * t
 		t.origin.y = 0
 		tile.pathing_centre = t.origin
 		$PathingManager.add_tile(tile)
-		var cap : MeshInstance = $"../ObjectFactory/MonorailCap".duplicate()
-		tile.add_child(cap)
-		tile.monorail_cap = cap
-		# -0.2 to hide
-		cap.transform.origin += Vector3(cairo.RIGHT_POINT__UP, cairo.HEIGHT - 0.5, cairo.RIGHT_POINT__UP)
+		t.origin.y = -0.3
+		cap_mm.multimesh.set_instance_transform(cap_count, t)
+		tile.monorail_cap_id = cap_count
+		tile.monorail_cap_mm = cap_mm.multimesh
+		cap_count += 1
+		# -0.3 to hide
+
 
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
 		if tile.get_id() in GlobalVars.LEVEL.MCP:
 			tile.player = GlobalVars.LEVEL.MCP.find( tile.get_id() )
-			var mcp : StaticBody = $"../ObjectFactory/MCP".duplicate()
-			mcp.location = tile
-			mcp.state = mcp.State.CONSTRUCTED
-			mcp.transform = tile.get_global_transform()
-			mcp.transform.origin.y = 0
-			mcp.add_to_group("mcp")
-			tile.set_building(mcp)
-			$Buildings.add_child(mcp)
-			tile.translation.y = -cairo.HEIGHT
-			tile.set_destroyed()
+			building_manager.place_building(tile, building_manager.Type.MCP)
 		elif tile.get_id() in GlobalVars.LEVEL.DESTROYED:
 			tile.set_destroyed()
 			tile.translation.y = -cairo.HEIGHT
@@ -183,7 +186,7 @@ func apply_loaded_level():
 func add_monorail():
 	# Our grid is formed of a tesselation of a four-tile primitive.
 	# The linking relationships between neighbouring tiles depends on
-	# the transloation and rotations applied during the tesselation.
+	# the translation and rotations applied during the tesselation.
 	# The four dictionaries below map this for each of the base tiles
 	var tile_groups : Array = ["tilesA", "tilesB", "tilesC", "tilesD"]
 	var monorail_groups : Array = ["mr1", "mr2", "mr3"]
@@ -194,6 +197,13 @@ func add_monorail():
 	var tiles_mapping : Dictionary = {
 		"tilesA": tilesA_mapping, "tilesB": tilesB_mapping,
 		"tilesC": tilesC_mapping, "tilesD": tilesD_mapping}
+	var total_monorails := 0
+	total_monorails += get_tree().get_nodes_in_group("tilesA").size() * 3
+	total_monorails += get_tree().get_nodes_in_group("tilesB").size() * 3
+	total_monorails += get_tree().get_nodes_in_group("tilesC").size() * 2
+	total_monorails += get_tree().get_nodes_in_group("tilesD").size() * 2
+	monorail_mm.multimesh.set_instance_count(total_monorails) # This is high-balling it, due to DISABLED instances
+	var mr_count := 0
 	for tg in tile_groups:
 		for tile in get_tree().get_nodes_in_group(tg):
 			var mapping = tiles_mapping[tg]
@@ -205,24 +215,38 @@ func add_monorail():
 					continue;
 				var target : StaticBody = tile.neighbours[ neighbour_id ]
 				if target.state == TileElement.State.BUILT or target.state == TileElement.State.DESTROYED:
-					var mr = monorail.instance()
-					mr.transform = tile.get_child(0).get_transform()
-					mr.transform.origin += Vector3(cairo.RIGHT_POINT__UP, 0.0, cairo.RIGHT_POINT__UP)
+					var mr : Monorail = monorail_mm.new_mr(mr_count)
+					var t : Transform = tile.get_child(0).get_transform()
+
+
 					if mg == "mr2":
-						mr.rotate_y(deg2rad(60))
+						t = t.rotated(Vector3.UP, deg2rad(60))
+						# This is broken in the new coordinate system... this is good enough TODO - fix!
+						t.origin += Vector3(0.5 * cairo.RIGHT_POINT__UP, 0.0, 2 * cairo.RIGHT_POINT__UP)
+						#t = tile.get_global_transform() * t
 					elif mg == "mr3":
-						mr.rotate_y(deg2rad(120))
+						t = t.rotated(Vector3.UP, deg2rad(120))
+						# As above - ugly & not precise
+						t.origin += Vector3(1.6 * cairo.RIGHT_POINT__UP, 0.0, 2.0 * cairo.RIGHT_POINT__UP)
+						#t = tile.get_global_transform() * t
+					else:
+						t.origin += Vector3(0.0, 0.0, cairo.RIGHT_POINT__UP)
+					t = tile.get_global_transform() * t
+					t.origin.y = -0.5 # Hide
+					monorail_mm.multimesh.set_instance_transform(mr_count, t)
 					tile.links_to(target, mr, true)
-					# Move mr into the global coordinate basis, set under floor 
-					mr.transform = tile.get_global_transform() * mr.transform
-					mr.transform.origin.y = -0.5 # Hide
-					$Monorails.add_child(mr)
+					mr_count += 1
+	assert(mr_count <= total_monorails)
+	monorail_mm.multimesh.set_visible_instance_count(mr_count)
 
 
 func apply_initial_monorail_and_zoomba():
+	print(monorail_mm.monorail_dict[10], " ", monorail_mm.monorail_dict[10].monorail_id)
+	print(monorail_mm.monorail_dict[11], " ", monorail_mm.monorail_dict[11].monorail_id)
 	for id in GlobalVars.LEVEL.MCP:
 		var player = GlobalVars.LEVEL.MCP.find( id )
 		var tile : TileElement = tile_dictionary[id] # Get ID of MCP tile
+		tile.player = player
 		var done := false
 		for n in tile.neighbours:
 			if n.state == TileElement.State.DESTROYED: # Find a vaid initial link
@@ -239,21 +263,11 @@ func apply_initial_monorail_and_zoomba():
 
 func disabled_tiles_to_multimesh():
 	var disabled := get_tree().get_nodes_in_group("disabled")
-	var disabled_mm : MultiMeshInstance = $DisabledTiles
+	var disabled_mm := $DisabledTileMultimesh
 	disabled_mm.set_multimesh(MultiMesh.new())
-	disabled_mm.get_multimesh().transform_format = MultiMesh.TRANSFORM_3D
-	#
-	var mesh_instance = MeshInstance.new()
-	mesh_instance.set_mesh(cairo.cairo_mesh)
-	mesh_instance.set_surface_material(0, disabled_material)
-	mesh_instance.set_surface_material(1, outline_material)
-	#
-	disabled_mm.get_multimesh().mesh = mesh_instance
-	disabled_mm.get_multimesh().instance_count = disabled.size()
-	# Broken
+	disabled_mm.multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	disabled_mm.multimesh.mesh = cairo.mesh.duplicate()
+	disabled_mm.multimesh.instance_count = disabled.size()
 	for i in range(disabled.size()):
-		disabled_mm.get_multimesh().set_instance_transform(i, disabled[i].get_global_transform())
-		disabled_mm.get_multimesh().set_instance_transform(i, Transform(Basis(), Vector3(-70,10,-70)))
-		#print(disabled[i].get_global_transform())
-		#disabled[i].get_child(0).queue_free()
-	print(disabled_mm.get_multimesh())
+		disabled_mm.multimesh.set_instance_transform(i, disabled[i].get_global_transform())
+		disabled[i].get_child(0).queue_free()

@@ -1,4 +1,5 @@
 extends MultiMeshInstance
+# warning-ignore-all:return_value_discarded
 
 onready var rand := RandomNumberGenerator.new()
 onready var Curry = preload("res://scenes/Curry.tscn")
@@ -71,9 +72,8 @@ func _ready():
 	initial_mountain_index = -1
 	multimesh.instance_count = EXTENT*EXTENT
 	var count : int = -1
-# warning-ignore:integer_division
+# warning-ignore-all:integer_division
 	for x in range(-EXTENT/2, EXTENT/2):
-# warning-ignore:integer_division
 		for z in range(-EXTENT/2, EXTENT/2):
 			count += 1
 			assert(count < multimesh.instance_count)
@@ -88,6 +88,7 @@ func _ready():
 		curry_inst.curry(self, "update_mountain", [initial_mountain_index + i])
 		curry_inst.call_me(current[i])
 		curries.push_back(curry_inst)
+		add_child(curry_inst)
 	# Set collison for floor
 	var collision_box : BoxShape = $Area/CollisionShape.shape
 	collision_box.extents = Vector3(EXTENT * grid_mesh_instance.LENGTH, 1.0, EXTENT * grid_mesh_instance.LENGTH)

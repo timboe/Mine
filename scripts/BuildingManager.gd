@@ -91,5 +91,18 @@ func place_blueprint(var tile : TileElement):
 	doing_placement = Type.NONE
 	placement_player = -1
 
+# Place a pre-constructed building. Used in setting up the level
+func place_building(var tile : TileElement, var type : int):
+	var b : StaticBody = building_instances[type].duplicate()
+	b.location = tile
+	b.state = b.State.CONSTRUCTED
+	b.transform = tile.get_global_transform()
+	b.transform.origin.y = 0
+	tile.set_building(b)
+	add_child(b)
+	if tile.state != tile.State.DESTROYED:
+		tile.translation.y = -(GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET)
+		tile.set_destroyed()
+
 func is_placing() -> bool:
 	return doing_placement != Type.NONE

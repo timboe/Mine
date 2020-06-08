@@ -29,10 +29,15 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://scripts/JobManager.gd"
 }, {
-"base": "StaticBody",
+"base": "Reference",
 "class": "Monorail",
 "language": "GDScript",
 "path": "res://scripts/Monorail.gd"
+}, {
+"base": "Node",
+"class": "PathingManager",
+"language": "GDScript",
+"path": "res://scripts/PathingManager.gd"
 }, {
 "base": "StaticBody",
 "class": "TileElement",
@@ -60,6 +65,7 @@ _global_script_class_icons={
 "CairoTilesetGen": "",
 "JobManager": "",
 "Monorail": "",
+"PathingManager": "",
 "TileElement": "",
 "Vat": "",
 "Zapper": "",

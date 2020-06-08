@@ -1,6 +1,6 @@
-extends StaticBody
-
+extends Reference
 class_name Monorail
+# warning-ignore-all:return_value_discarded
 
 const CONSTRUCT_TIME := 1.0
 
@@ -13,7 +13,13 @@ var pathing : Array
 var tile_owner : TileElement
 var tile_target : TileElement
 
-func _ready():
+# These references need passing in
+var tween : Tween
+var pathing_manager : PathingManager
+var monorail_mm : MultiMesh
+var monorail_id : int
+
+func _init():
 	for _i in range(GlobalVars.MAX_PLAYERS):
 		pathing.push_back( Pathing.BIDIRECTIONAL )
 
@@ -21,12 +27,20 @@ func set_connections(var o : TileElement, var t : TileElement):
 	tile_owner = o
 	tile_target = t
 	
+func get_translation_y() -> float:
+	return monorail_mm.get_instance_transform(monorail_id).origin.y
+
+func set_translation_y(var v : float):
+	var t : Transform = monorail_mm.get_instance_transform(monorail_id)
+	t.origin.y = v
+	monorail_mm.set_instance_transform(monorail_id, t)
+	
 func start_construction(var by_whome):
 	assert(state == State.INITIAL)
 	state = State.UNDER_CONSTRUCTION
-	var tween : Tween = $"../../Tween"
+
 	tween.remove(self)
-	tween.interpolate_property(self, "translation:y", null, 0.0, CONSTRUCT_TIME)
+	tween.interpolate_method(self, "set_translation_y", get_translation_y(), 0.0, CONSTRUCT_TIME)
 	tween.interpolate_callback(self, CONSTRUCT_TIME, "set_constructed", by_whome, false)
 	tween.start()
 	tile_owner.raise_cap(CONSTRUCT_TIME)
@@ -34,9 +48,8 @@ func start_construction(var by_whome):
 	
 func abandon_construction():
 	assert(state == State.UNDER_CONSTRUCTION)
-	var tween : Tween = $"../../Tween"
 	tween.remove(self)
-	tween.interpolate_property(self, "translation:y", null, -0.5, CONSTRUCT_TIME)
+	tween.interpolate_method(self, "set_translation_y", get_translation_y(), -0.5, CONSTRUCT_TIME)
 	tween.interpolate_callback(self, CONSTRUCT_TIME, "set_initial")
 	tween.start()	
 
@@ -64,7 +77,7 @@ func set_constructed(var by_whome, var instant : bool):
 	# Or start a fight?
 	tile_owner.try_and_spread_capture()
 	tile_target.try_and_spread_capture()
-	transform.origin.y = 0
+	set_translation_y(0.0)
 	if not instant:
 		by_whome.job_finished(true)
 
@@ -73,22 +86,22 @@ func update_building_passable():
 		return
 	var owner_accessible = (tile_owner.building == null) 
 	var target_accessible = (tile_target.building == null)
-	var state : int =  Pathing.NONE
+	var pathing_state : int =  Pathing.NONE
 	if owner_accessible and target_accessible:
-		state = Pathing.BIDIRECTIONAL
+		pathing_state = Pathing.BIDIRECTIONAL
 	elif owner_accessible and not target_accessible:
-		state = Pathing.TARGET_TO_OWNER
+		pathing_state = Pathing.TARGET_TO_OWNER
 	elif not owner_accessible and target_accessible:
-		state = Pathing.OWNER_TO_TARGET
-	set_passable_for_all(state)
+		pathing_state = Pathing.OWNER_TO_TARGET
+	set_passable_for_all(pathing_state)
 
-func set_passable_for_all(var passable_state):
+func set_passable_for_all(var pathing_state):
 	for p in range(GlobalVars.MAX_PLAYERS):
-		pathing[p] = passable_state
+		pathing[p] = pathing_state
 	update_pathing()
 
-func set_passable(var player : int, var passable_state):
-	pathing[player] = passable_state
+func set_passable(var player : int, var pathing_state):
+	pathing[player] = pathing_state
 	update_pathing()
 
 func get_passable(var player : int, var from : TileElement, var to : TileElement):
@@ -110,16 +123,15 @@ func get_passable(var player : int, var from : TileElement, var to : TileElement
 func update_pathing():
 	if state != State.CONSTRUCTED:
 		return
-	var pm = $"../../PathingManager"
 	for p in range(GlobalVars.MAX_PLAYERS):
-		pm.disconnect_tiles(p, tile_owner, tile_target)
+		pathing_manager.disconnect_tiles(p, tile_owner, tile_target)
 		match pathing[p]:
 			Pathing.BIDIRECTIONAL:
-				pm.connect_tiles(p, tile_owner, tile_target, true)
+				pathing_manager.connect_tiles(p, tile_owner, tile_target, true)
 			Pathing.OWNER_TO_TARGET:
-				pm.connect_tiles(p, tile_owner, tile_target, false)
+				pathing_manager.connect_tiles(p, tile_owner, tile_target, false)
 			Pathing.TARGET_TO_OWNER:
-				pm.connect_tiles(p, tile_target, tile_owner, false)
+				pathing_manager.connect_tiles(p, tile_target, tile_owner, false)
 			Pathing.NONE:
 				pass
 

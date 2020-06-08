@@ -1,5 +1,7 @@
 extends Node
 
+class_name PathingManager
+
 onready var astar : Array 
 
 func _ready():

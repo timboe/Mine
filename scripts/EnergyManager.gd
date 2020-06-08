@@ -1,4 +1,5 @@
 extends Spatial
+# warning-ignore-all:return_value_discarded
 
 var energy_cache : Array # Array of vector2 per player. X=total capacity, Y=total energy
 var to_add : Array # Array of float per player. Used to add up how much to add per player per tick
@@ -43,14 +44,14 @@ func try_spend(var player : int, var amount : float) -> bool:
 	# Could afford, and energy was deducted
 	return true
 
-func add_energy(var player : int, var e : float) -> bool:
+func add_energy(var player : int, var e : float) -> float:
 	for vat in get_tree().get_nodes_in_group("vat"):
 		if vat.location != null and vat.location.player != player:
 			continue
 		e = vat.add(e)
 		if e == 0.0:
-			return true
-	return false
+			return 0.0
+	return e
 
 func _on_AddEnergy_timeout():
 	# Clear the to-add array, cached array
@@ -66,15 +67,18 @@ func _on_AddEnergy_timeout():
 			
 	# Give the energy
 	for p in range(GlobalVars.MAX_PLAYERS):
-		var all_assigned := add_energy(p, to_add[p])
+		var _wasted := add_energy(p, to_add[p])
+		if (_wasted > 0):
+			print(_wasted, " energy wasted for player ", p)
 		
 	# Update animation and collect statistics on total energy
 	for vat in get_tree().get_nodes_in_group("vat"):
 		vat.animate(ANIM_TIME, energy_cache)
 		
 	# Update the UI
-	tween.interpolate_property(player_energy_control, "max_value",
-		null, energy_cache[0].x, ANIM_TIME)
-	tween.interpolate_property(player_energy_control, "value",
-		null, energy_cache[0].y, ANIM_TIME)
-	tween.start()
+	if energy_cache[0].x > 0.0:
+		tween.interpolate_property(player_energy_control, "max_value",
+			null, energy_cache[0].x, ANIM_TIME)
+		tween.interpolate_property(player_energy_control, "value",
+			null, energy_cache[0].y, ANIM_TIME)
+		tween.start()

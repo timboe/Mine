@@ -1,4 +1,5 @@
 extends Building
+# warning-ignore-all:return_value_discarded
 
 class_name Vat
 
@@ -11,15 +12,13 @@ var capacity_mod := 0.0
 var contains := 0.0 setget set_contains
 
 var liquid = null
-var tween = null
 
 func _ready():
 	if location != null:
 		add_to_group("vat")
 	if has_node("Liquid"):
 		liquid = $Liquid
-		tween = $"../Tween"
-		
+
 func get_capacity():
 	return CAPACITY + capacity_mod
 		
@@ -43,9 +42,11 @@ func add(var to_add : float) -> float:
 	var remainder : float = contains + to_add - get_capacity()
 	if remainder > 0:
 		set_contains(get_capacity())
+		#print(remainder)
 		return remainder
 	else:
 		set_contains(contains + to_add)
+		#print("exactly 0")
 		return 0.0
 		
 func remove(var to_remove : float) -> float:

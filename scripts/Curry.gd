@@ -1,4 +1,3 @@
-tool
 extends Node
 
 #
@@ -38,6 +37,3 @@ func curry(ob,me,args):
 	curry_args.clear()
 	for arg in args:
 		curry_args.append(arg)
-
-func _ready():
-	pass

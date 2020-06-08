@@ -1,7 +1,6 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=8 format=2]
 
 [ext_resource path="res://materials/chrome_material.tres" type="Material" id=1]
-[ext_resource path="res://scripts/Monorail.gd" type="Script" id=2]
 [ext_resource path="res://meshes/temp_railcentre.tres" type="CubeMesh" id=3]
 [ext_resource path="res://meshes/temp_railedge.tres" type="PrismMesh" id=4]
 
@@ -20,7 +19,6 @@ data = PoolVector3Array( -0.25, 0.25, 6.333, 0.25, -0.25, 6.333, -0.25, -0.25, 6
 
 [node name="Monoraill" type="StaticBody"]
 input_ray_pickable = false
-script = ExtResource( 2 )
 
 [node name="CSGCombiner" type="CSGCombiner" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -6.333, 0, 0 )

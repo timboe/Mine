@@ -30,7 +30,7 @@ depth_texture = ExtResource( 2 )
 material = SubResource( 1 )
 top_radius = 0.5
 bottom_radius = 2.0
-height = 0.5
+height = 1.0
 
 [node name="MonorailCap" type="MeshInstance"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0 )

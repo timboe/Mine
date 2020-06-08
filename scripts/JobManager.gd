@@ -18,7 +18,7 @@ func _ready():
 	for _i in range(GlobalVars.MAX_PLAYERS):
 		player_jobs.push_back( {} ) 
 		unassigned_count.push_back( 0 )
-		var p : Array
+		var p : Array = []
 		for _jt in JobType:
 			p.push_back(1)
 		priorities.push_back(p)
@@ -108,8 +108,9 @@ func _on_AssignJobs_timeout():
 		for job in player_jobs[player].values():
 			job["abandoned_timer"] -= $AssignJobs.wait_time
 	assign_jobs()
+	print_stray_nodes()
 
-func _process(delta):
+func _process(var _delta : float):
 	# Debug renderer
 	dr.clear()
 	dr.begin(Mesh.PRIMITIVE_LINES)

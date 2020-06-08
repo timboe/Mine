@@ -1,6 +1,6 @@
 extends Spatial
-
 class_name Zoomba
+# warning-ignore-all:return_value_discarded
 
 enum State {IDLE, PATHING, WORKING}
 
@@ -18,6 +18,9 @@ var path : PoolIntArray = []
 var progress : int
 var scram_count : int = 0
 
+onready var tween : Tween = $"../Tween"
+onready var job_manager : JobManager = $"../../JobManager"
+onready var pathing_manager : Node = $"../../CairoTilesetGen/PathingManager"
 # Used for rotation
 var quat_from : Quat
 var quat_to : Quat
@@ -52,7 +55,7 @@ func assign(var new_job : Dictionary):
 
 func check_pathing_valid() -> bool:
 	if path.size() == 0:
-		path = $"../../PathingManager".pathfind(player, location, job["place"])
+		path = pathing_manager.pathfind(player, location, job["place"])
 		progress = 1 # 0 is our starting location
 		#print("player " , player , " from " , location , " to " , job["place"] , " size " , path.size())
 		if path.size() < 2:
@@ -77,7 +80,7 @@ func pathing_callback():
 		return abandon_job(false) # No active call-backs
 	# Fifth, move to next location
 	assert(progress < path.size())
-	location = $"../../PathingManager".get_tile( path[progress] )
+	location = pathing_manager.get_tile( path[progress] )
 	progress += 1
 	move("pathing_callback")
 
@@ -95,7 +98,7 @@ func abandon_job_while_pathing(var have_active_callback : bool):
 	var id = job["id"]
 	print("ABANDONING JOB WHILE PATHING ", job)
 	job = null
-	$"../../../JobManager".abandon_job(player, id)
+	job_manager.abandon_job(player, id)
 	# Wait for pathing callback, unless it was the pathing itself which failed
 	if not have_active_callback:
 		idle_callback()
@@ -123,7 +126,7 @@ func abandon_job_while_working(var have_active_callback : bool):
 	var id = job["id"]
 	print("ABANDONING JOB WHILE WORKIN ", id)
 	job = null
-	$"../../../JobManager".abandon_job(player, id)
+	job_manager.abandon_job(player, id)
 	# If we abandoned while we were working - then we were waiting for the end-of
 	# job callback which will now never come. Hence we now need to call idle_callback
 	idle_callback()
@@ -197,18 +200,12 @@ func start_work():
 		_:
 			print("UNKNOWN JOB TYPE")
 			assert(false)
-
-
-
 			
 func quick_rotate():
 	if job["target"] == null:
 		 return
 	setup_rotation(job["target"], null)
-	var tween : Tween = $"../../Tween"
-# warning-ignore:return_value_discarded
 	tween.interpolate_method(self, "quat_transform", 0.0, 1.0, QUICK_ROTATE_TIME)
-# warning-ignore:return_value_discarded
 	tween.start()
 
 func job_finished(var work_was_done : bool):
@@ -218,8 +215,8 @@ func job_finished(var work_was_done : bool):
 	$Zapper.visible = false
 	var job_id = job["id"]
 	job = null
-	$"../../../JobManager".remove_job(player, job_id)
-	$"../../../JobManager".assign_jobs()
+	job_manager.remove_job(player, job_id)
+	job_manager.assign_jobs()
 	idle_callback()
 	
 func idle_callback():
@@ -273,28 +270,24 @@ func setup_rotation(var target, var look_at_from_target):
 		look_at(look_at_from_target.pathing_centre, Vector3.UP)
 		transform.origin = cache_origin
 	else:
-		if location != target:
-			look_at(target.pathing_centre, Vector3.UP)
+		# Note: Sometimes, if stuck, we path to our own tile
+		#if transform.origin.distance_to( location.pathing_centre ) > 1e-3:
+		look_at(target.pathing_centre, Vector3.UP)
 	rotation.y -= PI/2.0
 	quat_to = Quat(transform.basis)
 	transform.basis = cache_rot
 
 func move(var callback):
 	setup_rotation(location, null if job == null else job["target"])
-	var tween : Tween = $"../../Tween"
 	var time = MOVE_TIME 
 	if scram_count > 0:
 		time *=  0.5
 	elif state == State.IDLE:
 		time *= 2.0 
 	# else - pathing, time *= 1.0
-# warning-ignore:return_value_discarded
 	tween.interpolate_method(self, "quat_transform", 0.0, 1.0,time/2.0)
-# warning-ignore:return_value_discarded
 	tween.interpolate_property(self, "translation", null, location.pathing_centre, time)
-# warning-ignore:return_value_discarded
 	tween.interpolate_callback(self, time, callback)
-# warning-ignore:return_value_discarded
 	tween.start()
 
 func quat_transform(var amount : float):

@@ -1,4 +1,5 @@
 extends StaticBody
+# warning-ignore-all:return_value_discarded
 
 class_name Building
 
@@ -21,6 +22,9 @@ var spawn_particles
 var zoomba_constructing_me
 var my_blueprint setget set_blueprint
 
+onready var tween : Tween = $"../Tween"
+onready var actor_manager : Spatial = $"../../ActorManager"
+onready var job_manager = $"../../JobManager"
 
 func set_blueprint(var b):
 	my_blueprint = b
@@ -30,7 +34,7 @@ func set_blueprint(var b):
 
 func set_spawn_start_loc(var s):
 	spawn_start_loc = s
-	spawn_particles = $"../../../CameraManager/SpawnParticles".duplicate()
+	spawn_particles = $"../../CameraManager/SpawnParticles".duplicate()
 	$"../".add_child(spawn_particles)
 	spawn_particles.transform.origin = spawn_start_loc.pathing_centre
 	
@@ -58,7 +62,6 @@ func recursive_set_livery(var node):
 func start_construction(var by_whome):
 	assert(state == State.BLUEPRINT)
 	state = State.UNDER_CONSTRUCTION
-	var tween : Tween = $"../../Tween"
 	tween.remove(self)
 	tween.interpolate_callback(self, CONSTRUCTION_TIME, "set_constructed_a", by_whome)
 	zoomba_constructing_me = by_whome
@@ -66,7 +69,6 @@ func start_construction(var by_whome):
 	
 func abandon_construction():
 	assert(state == State.UNDER_CONSTRUCTION)
-	var tween : Tween = $"../../Tween"
 	tween.remove(self)
 	state = State.BLUEPRINT
 	zoomba_constructing_me = null
@@ -77,7 +79,6 @@ func set_constructed_a(var by_whome):
 	state = State.CONSTRUCTED
 	by_whome.job_finished(true)
 	$BuildinConstructedParticles.emitting = true
-	var tween : Tween = $"../../Tween"
 	tween.interpolate_callback(self, 1.0, "set_constructed_b")
 	zoomba_constructing_me = null
 	
@@ -92,10 +93,9 @@ func on_PulseTimer_timeout(var pulse_n : int):
 		n.pulse_start(PULSE_INITIAL, pulse_n)
 		
 func add_zoomba():
-	var zoomba = $"../../../ObjectFactory/Zoomba".duplicate()
-	$"../../Actors".add_child(zoomba)
+	var zoomba = $"../../ObjectFactory/Zoomba".duplicate()
+	actor_manager.add_child(zoomba)
 	zoomba.initialise(spawn_start_loc, location.player) # Sets zoomba owner
-	var tween : Tween = $"../../Tween"
 	tween.interpolate_property(zoomba, "translation:y", 
 		zoomba.translation.y - 2, zoomba.translation.y, SPAWN_TIME)
 	tween.interpolate_callback(self, SPAWN_TIME, "zoomba_callback", zoomba)
@@ -108,13 +108,11 @@ func zoomba_callback(var z):
 	z.idle_callback()
 	
 func start_capture(var by_whome):
-	var tween : Tween = $"../../Tween"
 	tween.interpolate_callback(self, CAPTURE_TIME, "set_captured", by_whome)
 	tween.start()
 	capture_in_progress = true
 	
 func abandon_capture():
-	var tween : Tween = $"../../Tween"
 	tween.remove(self)
 	capture_in_progress = false
 
@@ -129,7 +127,6 @@ func set_captured(var by_whome):
 	
 func queue_construction_jobs():
 	assert(state == State.BLUEPRINT)
-	var job_manager = $"../../JobManager"
 	var access_tiles = location.get_access_tiles()
 	assert(access_tiles.size() > 0)
 	for access in access_tiles:

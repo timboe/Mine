@@ -1,4 +1,5 @@
 extends Spatial
+# warning-ignore-all:return_value_discarded
 
 enum CameraStatus {OVERHEAD, TO_FPS, FPS, TO_OVERHEAD}
 onready var camera_status : int = CameraStatus.OVERHEAD

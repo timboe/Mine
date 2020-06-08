@@ -1,4 +1,5 @@
 extends StaticBody
+# warning-ignore-all:return_value_discarded
 
 class_name TileElement
 
@@ -18,7 +19,8 @@ var building_manager
 var job_manager : JobManager 
 var player : int # Who owns this floor
 var building # What is built here
-var monorail_cap
+var monorail_cap_mm : MultiMesh
+var monorail_cap_id : int
 var monorail_cap_moved := false
 var claim_strength : int = 0
 var pulse_count : int = 0
@@ -117,6 +119,7 @@ func _ready():
 func delayed_ready():
 	if state >= State.DISABLED:
 		return
+
 	connect("mouse_entered", self, "_on_StaticBody_mouse_entered")
 	connect("mouse_exited", self, "_on_StaticBody_mouse_exited")
 	connect("input_event", self, "_on_StaticBody_input_event")
@@ -137,14 +140,14 @@ func update_HOVER_color(var is_hover : bool):
 	else:
 		mat.emission_enabled = false
 		
-func update_selected(var player):
+func update_selected(var player_selecting):
 	if state >= State.BEING_DESTROYED:
 		return
 	if GlobalVars.SELECTING_MODE:
 		state = State.SELECTED
-		selected_by[player] = true
+		selected_by[player_selecting] = true
 	else:
-		selected_by[player] = false
+		selected_by[player_selecting] = false
 		var n_selected = 0
 		for p in GlobalVars.MAX_PLAYERS:
 			if selected_by[p]:
@@ -223,10 +226,15 @@ func update_owner_emission():
 	
 func owner_emission_done():
 	updating_owner_emission = false
-	
+
+func raise_cap_call(var value : float):
+	var t : Transform = monorail_cap_mm.get_instance_transform(monorail_cap_id)
+	t.origin.y = value
+	monorail_cap_mm.set_instance_transform(monorail_cap_id, t)
+
 func raise_cap(var time):
 	if not monorail_cap_moved:
-		tween.interpolate_property(monorail_cap, "translation:y", null, HEIGHT, time)
+		tween.interpolate_method(self, "raise_cap_call", monorail_cap_mm.get_instance_transform(monorail_cap_id).origin.y, 0.0, time)
 		tween.start()
 		monorail_cap_moved = true
 
@@ -317,7 +325,7 @@ func abandon_capture(var by_whome):
 	tween.remove(self.mat)
 	tween.remove(by_whome)
 	tween.remove(self)
-	tween.interpolate_property(self.mat, "emission", null, OWNED_COLOUR[player], CAPTURE_TIME)
+	tween.interpolate_property(self.mat, "emission", null, OWNED_COLOUR[player], time)
 	tween.start()
 	
 func set_captured(var by_whome):
@@ -330,7 +338,7 @@ func set_captured(var by_whome):
 	by_whome.job_finished(true)
 	
 func get_access_tiles():
-	var array : Array
+	var array : Array = []
 	for n in paths.keys():
 		if n.building == null and n.player == player:
 			assert(n.state == State.DESTROYED)

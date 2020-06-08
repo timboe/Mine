@@ -28,6 +28,7 @@ func _input(event):
 	if (event is InputEventMouseButton):
 		var wheel : float = WHEEL_MOD * (Input.get_action_strength("ui_zoom_out") - Input.get_action_strength("ui_zoom_in"))
 		if wheel != 0.0:
+# warning-ignore:narrowing_conversion
 			_wheel_cache = round(wheel)
 
 func _poll():

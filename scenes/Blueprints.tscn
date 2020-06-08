@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://scenes/Generator.tscn" type="PackedScene" id=1]
 [ext_resource path="res://scripts/Blueprints.gd" type="Script" id=2]
@@ -7,6 +7,7 @@
 [ext_resource path="res://scenes/Zoomba.tscn" type="PackedScene" id=5]
 [ext_resource path="res://scenes/MonorailCap.tscn" type="PackedScene" id=6]
 [ext_resource path="res://scenes/Barrier.tscn" type="PackedScene" id=7]
+[ext_resource path="res://scenes/Monorail.tscn" type="PackedScene" id=8]
 
 [node name="Blueprints" type="Spatial"]
 script = ExtResource( 2 )
@@ -22,3 +23,7 @@ script = ExtResource( 2 )
 [node name="Barrier" parent="." instance=ExtResource( 7 )]
 
 [node name="MonorailCap" parent="." instance=ExtResource( 6 )]
+
+[node name="Monoraill" parent="." instance=ExtResource( 8 )]
+
+[node name="Tween" type="Tween" parent="."]
