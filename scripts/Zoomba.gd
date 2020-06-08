@@ -20,7 +20,7 @@ var scram_count : int = 0
 
 onready var tween : Tween = $"../Tween"
 onready var job_manager : JobManager = $"../../JobManager"
-onready var pathing_manager : Node = $"../../CairoTilesetGen/PathingManager"
+onready var pathing_manager : Node = $"../../TileManager/PathingManager"
 # Used for rotation
 var quat_from : Quat
 var quat_to : Quat

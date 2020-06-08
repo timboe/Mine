@@ -102,7 +102,7 @@ func can_be_destroyed() -> bool:
 		for p in GlobalVars.MAX_PLAYERS:
 			if selected_by[p]:
 				# Get player's home base tile
-				var myMCP = $"../../../../CairoTilesetGen".tile_dictionary[ GlobalVars.LEVEL.MCP[p] ]
+				var myMCP = $"../../../../TileManager".tile_dictionary[ GlobalVars.LEVEL.MCP[p] ]
 				if pathing_manager.are_tiles_connected(GlobalVars.MAX_PLAYERS, n, myMCP):
 					# My destriction was requested by someone who has a theoretically navagable
 					# path from a destroyed tile next to me back to their home-base

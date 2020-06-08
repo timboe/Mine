@@ -31,4 +31,4 @@ func get_point(var id : int) -> Vector3:
 	return astar[0].get_point_position(id) # we could have used any of the instances
 	
 func get_tile(var id : int) -> TileElement:
-	return $"../../CairoTilesetGen".tile_dictionary[id]
+	return $"../../TileManager".tile_dictionary[id]

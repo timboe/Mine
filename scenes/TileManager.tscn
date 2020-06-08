@@ -1,7 +1,7 @@
 [gd_scene load_steps=19 format=2]
 
 [ext_resource path="res://scripts/Cairo.gd" type="Script" id=1]
-[ext_resource path="res://scripts/CairoTilesetGen.gd" type="Script" id=2]
+[ext_resource path="res://scripts/TileManager.gd" type="Script" id=2]
 [ext_resource path="res://images/smoke_06.png" type="Texture" id=3]
 [ext_resource path="res://scripts/PathingManager.gd" type="Script" id=4]
 [ext_resource path="res://meshes/cairo_collision.tres" type="Shape" id=5]
@@ -81,7 +81,7 @@ surfaces/1 = {
 "vertex_count": 10
 }
 
-[node name="CairoTilesetGen" type="Spatial"]
+[node name="TileManager" type="Spatial"]
 script = ExtResource( 2 )
 
 [node name="PathingManager" type="Node" parent="."]

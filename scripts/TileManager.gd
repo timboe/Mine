@@ -1,5 +1,5 @@
 extends Spatial
-class_name CairoTilesetGen
+class_name TileManager
 
 onready var base_material : SpatialMaterial = preload("res://materials/aluminium.tres")
 onready var outline_material : ShaderMaterial = preload("res://materials/grid_edges.tres")

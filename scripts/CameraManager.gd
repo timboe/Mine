@@ -68,17 +68,17 @@ func _input(event):
 			mcp.add_zoomba()
 	if event.is_action_pressed("save"): # Temp - delete this
 		var scene = PackedScene.new()
-		var scene_root = $"../CairoTilesetGen"
+		var scene_root = $"../TileManager"
 		_set_owner(scene_root, scene_root)
 		scene.pack(scene_root)
 		ResourceSaver.save('res://my_scene.tscn', scene)
 		print("saved")
 	if event.is_action_pressed("load"): # Temp - delete this
 		var loaded_player = load("res://my_scene.tscn").instance()	
-		$"../CairoTilesetGen".queue_free()
+		$"../TileManager".queue_free()
 		$"../".add_child(loaded_player)
 	if event.is_action_pressed("generate"): # Temp - delete this
-		$"../CairoTilesetGen"._generate()
+		$"../TileManager"._generate()
 	if event.is_action_pressed("capture_toggle"):
 		match camera_status:
 			CameraStatus.OVERHEAD:
