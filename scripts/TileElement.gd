@@ -336,11 +336,21 @@ func set_captured(var by_whome):
 		n.update_owner_emission()
 		n.try_and_spread_capture()
 	by_whome.job_finished(true)
-	
+
+# From one destroyed tile to another	
 func get_access_tiles():
 	var array : Array = []
 	for n in paths.keys():
 		if n.building == null and n.player == player:
+			assert(n.state == State.DESTROYED)
+			array.push_back(n)
+	return array
+	
+# For a particular player to build a barrier
+func get_access_tiles_wall(var for_player : int):
+	var array : Array = []
+	for n in paths.keys():
+		if n.building == null and n.player == for_player:
 			assert(n.state == State.DESTROYED)
 			array.push_back(n)
 	return array

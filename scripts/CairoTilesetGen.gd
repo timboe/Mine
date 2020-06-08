@@ -166,13 +166,11 @@ func set_neighbours():
 		t.origin.y = 0
 		tile.pathing_centre = t.origin
 		$PathingManager.add_tile(tile)
-		t.origin.y = -0.3
+		t.origin.y = -0.6 # -0.6 to hide
 		cap_mm.multimesh.set_instance_transform(cap_count, t)
 		tile.monorail_cap_id = cap_count
 		tile.monorail_cap_mm = cap_mm.multimesh
 		cap_count += 1
-		# -0.3 to hide
-
 
 func apply_loaded_level():
 	for tile in get_tree().get_nodes_in_group("tiles"):
@@ -182,7 +180,7 @@ func apply_loaded_level():
 		elif tile.get_id() in GlobalVars.LEVEL.DESTROYED:
 			tile.set_destroyed()
 			tile.translation.y = -cairo.HEIGHT
-		
+
 func add_monorail():
 	# Our grid is formed of a tesselation of a four-tile primitive.
 	# The linking relationships between neighbouring tiles depends on
@@ -217,8 +215,6 @@ func add_monorail():
 				if target.state == TileElement.State.BUILT or target.state == TileElement.State.DESTROYED:
 					var mr : Monorail = monorail_mm.new_mr(mr_count)
 					var t : Transform = tile.get_child(0).get_transform()
-
-
 					if mg == "mr2":
 						t = t.rotated(Vector3.UP, deg2rad(60))
 						# This is broken in the new coordinate system... this is good enough TODO - fix!

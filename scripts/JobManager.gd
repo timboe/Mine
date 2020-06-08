@@ -48,7 +48,7 @@ func add_job(var player : int, var type : int, var place, var target):
 		"abandoned_by": null, "abandoned_n": 0, "abandoned_timer": 0.0}
 	unassigned_count[player] += 1
 	job_dict[job_id] = job
-	#print("New job ", job)
+	print("New job ", job)
 
 func remove_job(var player : int, var id_to_remove : int):
 	var job_dict = player_jobs[player]
@@ -114,7 +114,7 @@ func _process(var _delta : float):
 	# Debug renderer
 	dr.clear()
 	dr.begin(Mesh.PRIMITIVE_LINES)
-	for job in player_jobs[1].values():
+	for job in player_jobs[0].values():
 		var a = job["place"].pathing_centre
 		match job["type"]:
 			JobType.CONSTRUCT_MONORAIL:

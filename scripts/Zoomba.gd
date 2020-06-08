@@ -146,8 +146,8 @@ func check_job_still_valid() -> bool:
 				return false
 			if building.state != building.State.BLUEPRINT:
 				return false # Job was already done/stared (many directions can get queued)
-			if building.location.player != player:
-				return false # Was taken
+			if building.location.player != player and building.location.player != -1:
+				return false # Was taken (check also for -1 as barriers are built on un-claimed land)
 		JobManager.JobType.CLAIM_TILE:
 			var tile = job["place"]
 			if tile.player == player: 

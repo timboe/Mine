@@ -2,7 +2,7 @@ extends Spatial
 
 class_name BuildingManager
 
-enum Type {NONE, MCP, GEN, VAT}
+enum Type {NONE, MCP, GEN, VAT, BAR}
 
 var building_id : int = 0
 var building_dictionary : Dictionary
@@ -22,26 +22,47 @@ func _ready():
 	enabled_blueprints[Type.MCP] = $"../BlueprintsEnabled/MCP"
 	enabled_blueprints[Type.GEN] = $"../BlueprintsEnabled/Generator"
 	enabled_blueprints[Type.VAT] = $"../BlueprintsEnabled/Vat"
+	enabled_blueprints[Type.BAR] = $"../BlueprintsEnabled/Barrier"
 	#
 	disabled_blueprints[Type.MCP] = $"../BlueprintsDisabled/MCP"
 	disabled_blueprints[Type.GEN] = $"../BlueprintsDisabled/Generator"
 	disabled_blueprints[Type.VAT] = $"../BlueprintsDisabled/Vat"
+	disabled_blueprints[Type.BAR] = $"../BlueprintsDisabled/Barrier"
 	#
 	building_instances[Type.MCP] = $"../ObjectFactory/MCP"
 	building_instances[Type.GEN] = $"../ObjectFactory/Generator"
 	building_instances[Type.VAT] = $"../ObjectFactory/Vat"
+	building_instances[Type.BAR] = $"../ObjectFactory/Barrier"
 	
 func show_blueprint(var player : int, var type : int):
 	doing_placement = type
 	placement_player = player
 
+func can_place_here(var tile : TileElement):
+	if doing_placement == Type.BAR:
+		return (tile.state == tile.State.BUILT)
+	else:
+		return (tile.state == tile.State.DESTROYED)
+		
+func check_ownership(var tile : TileElement):
+	if doing_placement == Type.BAR:
+		return (tile.player == -1)
+	else:
+		return (tile.player == placement_player)
+		
+func check_access(var tile : TileElement):
+	if doing_placement == Type.BAR:
+		return tile.get_access_tiles_wall(placement_player)
+	else:
+		return tile.get_access_tiles()
+
 func update_blueprint(var tile : TileElement):
 	assert(doing_placement != Type.NONE)
-	if tile.state != tile.State.DESTROYED or tile.building != null:
+	if not can_place_here(tile) or tile.building != null:
 		enabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
 		disabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
 		return
-	if tile.player == placement_player and energy_manager.can_afford(placement_player, 10.0) and tile.get_access_tiles().size() > 0:
+	if check_ownership(tile) and energy_manager.can_afford(placement_player, 10.0) and check_access(tile).size() > 0:
 		enabled_blueprints[doing_placement].transform = tile.get_global_transform()
 		enabled_blueprints[doing_placement].transform.origin.y = -HIDE_DEPTH
 		disabled_blueprints[doing_placement].transform.origin.y = HIDE_DEPTH
@@ -53,20 +74,21 @@ func update_blueprint(var tile : TileElement):
 func place_blueprint(var tile : TileElement):
 	assert(doing_placement != Type.NONE)
 	update_blueprint(tile)
-	if tile.state != tile.State.DESTROYED:
+	if not can_place_here(tile):
 		return
 	if tile.building != null:
 		return
-	if tile.player != placement_player:
+	if not check_ownership(tile):
 		return
 	if not energy_manager.can_afford(placement_player, 10.0):
 		return
-	var access_tiles : Array = tile.get_access_tiles()
+	var access_tiles : Array = check_access(tile)
 	if access_tiles.size() == 0:
 		return
 	#
 	var new_building = building_instances[doing_placement].duplicate()
 	new_building.id = building_id
+	new_building.type = doing_placement
 	building_dictionary[building_id] = new_building
 	building_id += 1
 	tile.set_building(new_building) 
@@ -85,7 +107,7 @@ func place_blueprint(var tile : TileElement):
 	for z in get_tree().get_nodes_in_group("zoombas"):
 		z.path.resize(0) # Force re-pathing
 	#
-	new_building.queue_construction_jobs()
+	new_building.queue_construction_jobs(placement_player)
 	camera_manager.add_trauma(1.0, tile.pathing_centre)
 	#
 	doing_placement = Type.NONE

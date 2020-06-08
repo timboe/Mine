@@ -1,0 +1,8 @@
+[gd_resource type="PrismMesh" load_steps=2 format=2]
+
+[ext_resource path="res://materials/chrome_material.tres" type="Material" id=1]
+
+[resource]
+material = ExtResource( 1 )
+left_to_right = 0.0
+size = Vector3( 0.5, 0.5, 12.666 )

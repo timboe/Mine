@@ -11,6 +11,7 @@ var updated_mat
 
 enum State {BLUEPRINT, UNDER_CONSTRUCTION, CONSTRUCTED, UNDER_DESTRUCTION}
 var state : int
+var type
 
 const PULSE_INITIAL := 0.1
 const SPAWN_TIME : float = 5.0
@@ -123,12 +124,15 @@ func set_captured(var by_whome):
 	if zoomba_constructing_me != null:
 		zoomba_constructing_me.scram() # If I was being con/de-structed, now I'm not
 	if state == State.BLUEPRINT:
-		queue_construction_jobs() # I might have been captured before I was constructed
+		queue_construction_jobs(-1) # I might have been captured before I was constructed
 	
-func queue_construction_jobs():
+func queue_construction_jobs(var placement_player : int):
 	assert(state == State.BLUEPRINT)
-	var access_tiles = location.get_access_tiles()
+	if placement_player == -1:
+		# Called from set_captured, we can be sure we're not building a barrier then. Safe to do...
+		placement_player = location.player
+	var access_tiles = location.get_access_tiles_wall(placement_player) if type == BuildingManager.Type.BAR else location.get_access_tiles()
 	assert(access_tiles.size() > 0)
 	for access in access_tiles:
-		job_manager.add_job(location.player, job_manager.JobType.CONSTRUCT_BUILDING, access, location)
+		job_manager.add_job(placement_player, job_manager.JobType.CONSTRUCT_BUILDING, access, location)
 	
