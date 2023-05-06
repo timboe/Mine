@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=2]
+[gd_scene load_steps=28 format=2]
 
 [ext_resource path="res://scenes/TileManager.tscn" type="PackedScene" id=1]
 [ext_resource path="res://scripts/Camera.gd" type="Script" id=2]
@@ -16,6 +16,7 @@
 [ext_resource path="res://images/uipackSpace_sheet.png" type="Texture" id=14]
 [ext_resource path="res://images/UI/ui_theme.tres" type="Theme" id=15]
 [ext_resource path="res://images/UI/building_buttongroup.tres" type="ButtonGroup" id=16]
+[ext_resource path="res://scenes/WorldEnvironment.tres" type="Environment" id=17]
 
 [sub_resource type="AtlasTexture" id=1]
 flags = 4
@@ -69,41 +70,7 @@ albedo_texture = ExtResource( 7 )
 [sub_resource type="QuadMesh" id=9]
 material = SubResource( 8 )
 
-[sub_resource type="ProceduralSky" id=10]
-radiance_size = 3
-sky_top_color = Color( 1, 0, 1, 1 )
-sky_horizon_color = Color( 0, 1, 1, 1 )
-sky_curve = 0.15
-sky_energy = 0.3
-ground_bottom_color = Color( 0, 0.2, 0.2, 1 )
-ground_horizon_color = Color( 0, 1, 1, 1 )
-ground_curve = 0.1
-ground_energy = 0.3
-sun_color = Color( 1, 1, 0, 1 )
-sun_latitude = 20.0
-sun_longitude = 90.0
-sun_angle_min = 15.0
-sun_curve = 0.0138696
-sun_energy = 0.5
-texture_size = 3
-
-[sub_resource type="Environment" id=11]
-background_mode = 2
-background_sky = SubResource( 10 )
-fog_color = Color( 0, 1, 1, 1 )
-fog_sun_color = Color( 1, 1, 0, 1 )
-fog_sun_amount = 1.0
-fog_depth_end = 50.0
-dof_blur_far_distance = 500.0
-dof_blur_far_transition = 500.0
-dof_blur_far_quality = 2
-glow_enabled = true
-glow_bicubic_upscale = true
-adjustment_enabled = true
-adjustment_contrast = 2.0
-adjustment_saturation = 2.0
-
-[sub_resource type="SpatialMaterial" id=12]
+[sub_resource type="SpatialMaterial" id=10]
 flags_unshaded = true
 vertex_color_use_as_albedo = true
 
@@ -114,9 +81,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 script = ExtResource( 10 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="MarginContainer" type="MarginContainer" parent="ControlUI"]
 anchor_right = 1.0
@@ -264,7 +228,7 @@ process_material = SubResource( 7 )
 draw_pass_1 = SubResource( 9 )
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( 11 )
+environment = ExtResource( 17 )
 
 [node name="Camera" type="Camera" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 50, 0 )
@@ -323,12 +287,13 @@ wait_time = 5.0
 autostart = true
 
 [node name="DebugRender" type="ImmediateGeometry" parent="JobManager"]
-material_override = SubResource( 12 )
+material_override = SubResource( 10 )
 
 [node name="PulseTimer" type="Timer" parent="."]
 wait_time = 5.0
 autostart = true
 script = ExtResource( 8 )
+
 [connection signal="toggled" from="ControlUI/MarginContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer/Generator" to="ControlUI" method="_on_Generator_toggled"]
 [connection signal="toggled" from="ControlUI/MarginContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer/Vat" to="ControlUI" method="_on_Vat_toggled"]
 [connection signal="toggled" from="ControlUI/MarginContainer/Panel/MarginContainer/VBoxContainer/HBoxContainer/Barrier" to="ControlUI" method="_on_Barrier_toggled"]

@@ -123,7 +123,6 @@ func place_building(var tile : TileElement, var type : int):
 	tile.set_building(b)
 	add_child(b)
 	if tile.state != tile.State.DESTROYED:
-		tile.translation.y = -(GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET)
 		tile.set_destroyed()
 
 func is_placing() -> bool:

@@ -111,6 +111,7 @@ func _on_Timer_timeout():
 	current = next if !next.empty() else current
 	next = generate_mountain()
 	var tween : Tween = $Tween
+	print("Update mountain")
 	for i in range(EXTENT):
 		tween.interpolate_method(curries[i], "call_me", current[i], next[i], 
 		MORPH_TIME, Tween.TRANS_SINE, Tween.EASE_IN_OUT)

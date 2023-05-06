@@ -48,8 +48,6 @@ script = ExtResource( 7 )
 
 [node name="Plinth" type="MeshInstance" parent="."]
 mesh = ExtResource( 4 )
-material/0 = null
-material/1 = null
 script = ExtResource( 1 )
 
 [node name="CollisionShape" type="CollisionShape" parent="."]
@@ -58,7 +56,6 @@ shape = SubResource( 1 )
 [node name="BottomStop" type="MeshInstance" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 1, 6.4 )
 mesh = SubResource( 2 )
-material/0 = null
 
 [node name="CollisionShape2" type="CollisionShape" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4, 1, 6.4 )

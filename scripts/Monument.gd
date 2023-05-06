@@ -1,6 +1,6 @@
 extends StaticBody
 
-const GENERATE = false
+const GENERATE = true
 
 onready var beacon : MeshInstance 
 onready var mesh_instance : MeshInstance =  $MeshInstance

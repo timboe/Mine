@@ -61,5 +61,3 @@ draw_pass_1 = SubResource( 6 )
 
 [node name="MeshInstance" type="MeshInstance" parent="."]
 mesh = ExtResource( 1 )
-material/0 = null
-material/1 = null

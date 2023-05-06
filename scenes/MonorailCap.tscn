@@ -35,4 +35,3 @@ height = 1.0
 [node name="MonorailCap" type="MeshInstance"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 0 )
 mesh = SubResource( 2 )
-material/0 = null

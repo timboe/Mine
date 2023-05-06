@@ -1,6 +1,6 @@
 extends MeshInstance
 
-const GENERATE = false
+const GENERATE = true
 
 const LENGTH : float = 100.0
 const STEPS : int = 10

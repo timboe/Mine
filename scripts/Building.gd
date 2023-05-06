@@ -124,7 +124,11 @@ func set_captured(var by_whome):
 	if zoomba_constructing_me != null:
 		zoomba_constructing_me.scram() # If I was being con/de-structed, now I'm not
 	if state == State.BLUEPRINT:
-		queue_construction_jobs(-1) # I might have been captured before I was constructed
+		# Disallow capture of a barrier - just poof it
+		if type == BuildingManager.Type.BAR:
+			queue_free()
+		else:
+			queue_construction_jobs(-1) # I might have been captured before I was constructed
 	
 func queue_construction_jobs(var placement_player : int):
 	assert(state == State.BLUEPRINT)

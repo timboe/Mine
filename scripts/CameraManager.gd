@@ -8,7 +8,7 @@ onready var camera_status : int = CameraStatus.OVERHEAD
 # Transition parameters
 
 onready var player : KinematicBody = $"../Player"
-onready var rot_helper : Camera = $"../Player/Rotation_Helper"
+onready var rot_helper : Spatial = $"../Player/Rotation_Helper"
 onready var fps_camera : Camera = $"../Player/Rotation_Helper/Camera"
 onready var overhead_camera : Camera = $"../Camera"
 onready var overhead_light : OmniLight = $"../OmniLight"

@@ -12,16 +12,22 @@ var particles_instance : Particles
 
 var paths : Dictionary # dict of all pathable neighbours. Key=neighbour, Value=connecting monorail
 var neighbours : Array # Array of all neighbours (including immutible ones)
-var mat : SpatialMaterial
+
 var tween : Tween
 var camera_manager : Spatial 
 var building_manager
 var job_manager : JobManager 
+
 var player : int # Who owns this floor
 var building # What is built here
+
 var monorail_cap_mm : MultiMesh
 var monorail_cap_id : int
 var monorail_cap_moved := false
+
+var tile_mm : MultiMesh
+var tile_mm_id : int
+
 var claim_strength : int = 0
 var pulse_count : int = 0
 var updating_owner_emission := false
@@ -31,11 +37,8 @@ var pathing_centre = null
 
 onready var HEIGHT : float = GlobalVars.FLOOR_HEIGHT + GlobalVars.TILE_OFFSET
 
-
-const DISABLE_COLOUR : Color = Color(0/255.0, 0/255.0, 0/255.0)
 const HOVER_COLOUR : Color = Color(0/255.0, 45/255.0, 227/255.0)
-const SELECT_COLOUR : Color = Color(125/255.0, 125/255.0, 0/255.0) # Not used directly
-const HOVER_SELECT_COLOUR := HOVER_COLOUR + SELECT_COLOUR
+const SELECT_COLOUR : Color = Color(100/255.0, 200/255.0, 150/255.0) # Not used directly
 const HOVER_REMOVE_COLOUR : Color = Color(160/255.0, 0/255.0, 56/255.0)
 const OWNED_COLOUR : Array = [
 	Color(1, 0, 0),
@@ -62,7 +65,9 @@ func set_disabled():
 	
 func set_destroyed():
 	state = State.DESTROYED
-	mat.emission_energy = 0.0
+	set_tile_mm_emission(0.0)
+	transform.origin.y = -HEIGHT
+	set_tile_mm_height(-HEIGHT)
 	var pathing_manager = $"../../../PathingManager"
 	# Note: We don't have access to the paths variable yet
 	# as this is called also during the level setup
@@ -119,7 +124,6 @@ func _ready():
 func delayed_ready():
 	if state >= State.DISABLED:
 		return
-
 	connect("mouse_entered", self, "_on_StaticBody_mouse_entered")
 	connect("mouse_exited", self, "_on_StaticBody_mouse_exited")
 	connect("input_event", self, "_on_StaticBody_input_event")
@@ -127,18 +131,18 @@ func delayed_ready():
 	camera_manager = $"../../../../CameraManager"
 	job_manager = $"../../../../JobManager"
 	building_manager = $"../../../../BuildingManager"
-	mat = get_child(0).get_surface_material(0)
-	mat.emission_energy = 1.0 
-	mat.emission_enabled = false
 
 func update_HOVER_color(var is_hover : bool):
 	if state >= State.SELECTED:
 		return
+	if tile_mm == null:
+		return
 	if is_hover:
-		mat.emission = HOVER_COLOUR
-		mat.emission_enabled = true
+		set_tile_mm_emission(1.0)
+		set_tile_mm_color(HOVER_COLOUR)
 	else:
-		mat.emission_enabled = false
+		set_tile_mm_emission(0.0)
+
 		
 func update_selected(var player_selecting):
 	if state >= State.BEING_DESTROYED:
@@ -153,14 +157,13 @@ func update_selected(var player_selecting):
 			if selected_by[p]:
 				n_selected += 1
 		state = State.SELECTED if n_selected > 0 else State.BUILT
-	tween.remove(self.mat)
 	tween.remove(self)
 	tween_active = false
 	if state == State.SELECTED:
 		if can_be_destroyed():
 			do_deconstruct_start(FADE_TIME)
 		else:
-			mat.emission = HOVER_SELECT_COLOUR
+			set_tile_mm_color(SELECT_COLOUR)
 	else:
 		update_HOVER_color(true)
 		
@@ -211,21 +214,44 @@ func try_and_spread_capture():
 
 func update_owner_emission():
 	if player == -1:
-		mat.emission_enabled = false
+		set_tile_mm_emission(0.0)
 		return
 	claim_strength = 1
-	mat.emission_enabled = true
-	mat.emission = OWNED_COLOUR[player]
+	set_tile_mm_color(OWNED_COLOUR[player])
 	for n in paths.keys():
 		if n.player == player:
 			claim_strength += 1
-	tween.interpolate_property(self.mat, "emission_energy", null, claim_strength * 0.01, 0.5)
+	tween.interpolate_method(self, "set_tile_mm_emission", get_tile_mm_emission(), claim_strength * 0.01, 0.5)
 	tween.interpolate_callback(self, 0.5, "owner_emission_done")
 	tween.start()
 	updating_owner_emission = true
 	
 func owner_emission_done():
 	updating_owner_emission = false
+
+func get_tile_mm_height() -> float:
+	return tile_mm.get_instance_transform(tile_mm_id).origin.y
+
+func set_tile_mm_height(var value : float):
+	var t : Transform = tile_mm.get_instance_transform(tile_mm_id)
+	t.origin.y = value
+	tile_mm.set_instance_transform(tile_mm_id, t)
+
+func get_tile_mm_color() -> Color:
+	var c = tile_mm.get_instance_color(tile_mm_id)
+	return Color(c.r, c.g, c.b, 1.0)
+
+func set_tile_mm_color(var value : Color):
+	var c = tile_mm.get_instance_color(tile_mm_id)
+	tile_mm.set_instance_color(tile_mm_id, Color(value.r, value.g, value.b, c.a))
+
+func get_tile_mm_emission() -> float:
+	return tile_mm.get_instance_color(tile_mm_id).a
+
+func set_tile_mm_emission(var value : float):
+	var c = tile_mm.get_instance_color(tile_mm_id)
+	c.a = value
+	tile_mm.set_instance_color(tile_mm_id, c)
 
 func raise_cap_call(var value : float):
 	var t : Transform = monorail_cap_mm.get_instance_transform(monorail_cap_id)
@@ -241,8 +267,8 @@ func raise_cap(var time):
 func do_deconstruct_start(var time : float):
 	if tween_active:
 		return
-	tween.interpolate_property(self.mat, "emission",
-		HOVER_SELECT_COLOUR, HOVER_REMOVE_COLOUR, time,
+	tween.interpolate_method(self, "set_tile_mm_color",
+		SELECT_COLOUR, HOVER_REMOVE_COLOUR, time,
 		Tween.TRANS_CIRC, Tween.EASE_IN)
 	tween.interpolate_callback(self, time, "do_deconstruct_a")
 	tween.start()
@@ -255,19 +281,25 @@ func do_deconstruct_a():
 	tween.interpolate_property(self, "translation:y",
 		null, -HEIGHT * thunk_distance, thunk_time,
 		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
-	tween.interpolate_property(self.mat, "emission_energy",
+	tween.interpolate_method(self, "set_tile_mm_height",
+		get_tile_mm_height(), -HEIGHT * thunk_distance, thunk_time,
+		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
+	tween.interpolate_method(self, "set_tile_mm_emission",
 		1.0, 0.0, thunk_time,
 		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
 	tween.interpolate_callback(self, thunk_time, "do_deconstruct_b")
 	tween.start()
 	
 func do_deconstruct_b():
-	mat.emission_enabled = false
+	set_tile_mm_emission(0.0)
 	var fall_time : float = GlobalVars.rand.randf_range(4.5, 5.5)
 	camera_manager.slow_mo(true)
 	camera_manager.add_trauma(0.20, to_global(Vector3.ZERO), fall_time)
 	tween.interpolate_property(self, "translation:y",
 		null, -HEIGHT, fall_time,
+		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
+	tween.interpolate_method(self, "set_tile_mm_height",
+		get_tile_mm_height(), -HEIGHT, fall_time,
 		Tween.TRANS_QUART, Tween.EASE_IN_OUT)
 	tween.interpolate_callback(self, fall_time, "done_deconstruct")
 	tween.interpolate_callback(camera_manager, 0.25, "slow_mo", false)
@@ -286,12 +318,12 @@ func done_deconstruct():
 func pulse_start(var pulse_e, var pulse_n):
 	pulse_count = pulse_n
 	if not updating_owner_emission:
-		mat.emission_energy += pulse_e
+		set_tile_mm_emission( get_tile_mm_emission() + pulse_e )
 	tween.interpolate_callback(self, PULSE_TIME, "pulse_end", pulse_e, pulse_n, not updating_owner_emission)
 		
 func pulse_end(var pulse_e, var pulse_n, var i_pulsed):
 	if i_pulsed:
-		mat.emission_energy -= pulse_e
+		set_tile_mm_emission( get_tile_mm_emission() - pulse_e )
 	pulse_e -= PULSE_DECAY
 	if pulse_e <= 0:
 		return
@@ -314,18 +346,17 @@ func _on_StaticBody_mouse_exited():
 	
 func start_capture(var by_whome):
 	var time := CAPTURE_TIME * claim_strength
-	tween.remove(self.mat)
-	tween.interpolate_property(self.mat, "emission", null, OWNED_COLOUR[by_whome.player], time)
+	tween.remove(self)
+	tween.interpolate_method(self, "set_tile_mm_color", get_tile_mm_color(), OWNED_COLOUR[by_whome.player], time)
 	tween.interpolate_property(by_whome, "rotation:y", null, by_whome.rotation.y+(4.0*PI*time), time)
 	tween.interpolate_callback(self, time, "set_captured", by_whome)
 	tween.start()
 	
 func abandon_capture(var by_whome):
 	var time := CAPTURE_TIME
-	tween.remove(self.mat)
 	tween.remove(by_whome)
 	tween.remove(self)
-	tween.interpolate_property(self.mat, "emission", null, OWNED_COLOUR[player], time)
+	tween.interpolate_method(self, "set_tile_mm_color", get_tile_mm_color(), OWNED_COLOUR[player], time)
 	tween.start()
 	
 func set_captured(var by_whome):

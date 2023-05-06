@@ -13,8 +13,9 @@ uniform vec4 TOP_COLOUR = vec4(1.0, 0.0, 1.0, 1.0);
 uniform bool SCROLL = false;
 //
 const float THIRD = 1.0 / 3.0;
+const vec4 FIXED_COLOR = vec4(0.0, 1.0, 1.0, 0.0);
 
-void DO_MOUNTAIN(inout vec3 MVERTEX, inout vec4 MCOLOR, inout vec4 MINSTANCE_CUSTOM) {
+void DO_MOUNTAIN(inout vec3 MVERTEX, inout vec4 MCOLOR, in vec4 MINSTANCE_CUSTOM) {
 	float height = 0.0;
 	// Get mountain height moving along z
 	float z = MVERTEX.z / SHAPE_LENGTH;
@@ -52,7 +53,7 @@ void vertex() {
 }
 
 void fragment() {
-	ALBEDO = COLOR.xyz;
+	ALBEDO = FIXED_COLOR.xyz;
 }
 "
 

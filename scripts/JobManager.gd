@@ -30,12 +30,12 @@ func add_job(var player : int, var type : int, var place, var target):
 	var job : Dictionary
 	var have_job := false
 	var job_dict = player_jobs[player]
-	for job in job_dict.values():
-		if job["type"] != type:
+	for the_job in job_dict.values():
+		if the_job["type"] != type:
 			continue
-		if job["place"] != place:
+		if the_job["place"] != place:
 			continue
-		if job["target"] != target:
+		if the_job["target"] != target:
 			continue
 		have_job = true
 		break

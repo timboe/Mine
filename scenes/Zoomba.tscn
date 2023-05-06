@@ -46,12 +46,10 @@ cast_to = Vector3( 0, 12.666, 0 )
 [node name="Ball" type="MeshInstance" parent="Body"]
 transform = Transform( 1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, -1.9, 1, 0.5 )
 mesh = SubResource( 3 )
-material/0 = null
 
 [node name="Ball2" type="MeshInstance" parent="Body"]
 transform = Transform( 1, 0, 0, 0, 0.984808, -0.173648, 0, 0.173648, 0.984808, -1.9, 1, -0.5 )
 mesh = SubResource( 3 )
-material/0 = null
 
 [node name="CSGBody" type="CSGCombiner" parent="Body"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0 )
